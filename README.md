@@ -1,2 +1,2 @@
 # PyPlayMusic
-Python/Tk-based player for playing music in a Google Play Music account.
+Python/Tk-based player for music in a Google Play Music account.
