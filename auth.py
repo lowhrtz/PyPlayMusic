@@ -57,7 +57,7 @@ class AuthHandler(object):
     Class used as an interface for external programs/libraries. Particularly useful for testing cached authentication
     before opening the AuthWindow.
     """
-    def __init__(self, title, force_prompt = False):
+    def __init__(self, title, force_prompt=False):
         """
         AuthHandler __init__ function
         :param title: Desired title for AuthWindow
@@ -103,7 +103,7 @@ class AuthWindow(Tkinter.Tk):
 
     def initialize(self):
         """
-        Initialized gui widgets.
+        Initializes gui widgets.
         :return: None
         """
         self.grid()
@@ -117,7 +117,7 @@ class AuthWindow(Tkinter.Tk):
         self.user_field.bind("<Return>", self.on_press_enter)
         self.pass_field.bind("<Return>", self.on_press_enter)
 
-        #Place widgets in the grid
+        # Place widgets in the grid
         self.user_field.grid(column=0, columnspan=2, row=0, sticky='EW')
         self.pass_field.grid(column=0, columnspan=2, row=1, sticky='EW')
         auth_button.grid(column=1, row=2, sticky='EW')
