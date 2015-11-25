@@ -252,7 +252,6 @@ class MainWindow(Tkinter.Tk):
         self.player_state = "stopped"
         try:
             self.channel.stop()
-            #swmixer.stop()
         except:
             pass
 
@@ -330,16 +329,13 @@ class MainWindow(Tkinter.Tk):
         except AttributeError:
             pass
         search_tracks = TrackList([track for track in self.library
-                   if self.track_matches(track)])
+                                   if self.track_matches(track)])
         if len(search_tracks) == 0:
             global next_image
             next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE))
             self.album_image.configure(image = next_image)
             self.fileinfo['text'] = "Nothing matched your search!"
             return
-
-        current_search_index = self.search_choose.current()
-        current_search = self.search_choose['values'][current_search_index]
 
         if self.rand_list_var.get():
             random.shuffle(search_tracks)
