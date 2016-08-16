@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import os
 import random
 import re
+import sys
 import tkFont
 import Tkinter
 import ttk
@@ -412,15 +413,22 @@ class MainWindow(Tkinter.Tk):
         self.total_time['text'] = convert_milli_to_std(track['durationMillis'])
         self.update_listbox(tracks)
         self.update_idletasks()
+        #print self.mobile_client.get_registered_devices()
         try:
-            stream_audio = self.web_client.get_stream_audio(track['id'])
+            stream_audio = self.mobile_client.get_stream_url(track['id'], '39194ed805c89df6')
+            #stream_audio = self.mobile_client.get_stream_url(track['id'], '0123456789abcdef')
+            print stream_audio
+            #stream_audio = self.web_client.get_stream_audio(track['id'])
             #print "This is here"
-        except:
+        except Exception, e:
             print "Error retrieving track: " + track['title']
+            print "Error: ", e
             self.play_track(tracks.next(), tracks)
             return
+        song_bytes = urlopen(stream_audio).read()
+        #data_stream = io.BytesIO(song_bytes)
         tmp_file = open(TMP_MP3, "wb")
-        tmp_file.write(stream_audio)
+        tmp_file.write(song_bytes)
         song = swmixer.Sound(TMP_MP3)
         #stream_audio = numpy.fromstring(stream_audio, dtype=numpy.int8)
         #song = swmixer.Sound(data=stream_audio)
@@ -587,7 +595,8 @@ if __name__ == "__main__":
         email = auth_handle.uname
         password = auth_handle.passwd
         if (web_client.login(email, password) and
-                mobile_client.login(email, password, Mobileclient.FROM_MAC_ADDRESS)):
+                #mobile_client.login(email, password, Mobileclient.FROM_MAC_ADDRESS)):
+                mobile_client.login(email, password, '39194ed805c89df6')):
             authenticated = True
         else:
             force_prompt = True
