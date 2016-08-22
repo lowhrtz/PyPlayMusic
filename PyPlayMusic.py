@@ -130,11 +130,14 @@ class MainWindow(Tkinter.Tk):
         """
         Tkinter.Tk.__init__(self, parent)
         self.parent = parent
-        self.web_client = web_client
+        #self.web_client = web_client
         self.mobile_client = mobile_client
+        self.device_id = None
         self.channel = None
         self.library = None
         self.initialize()
+        self.center()
+        ChooseDevice(self, mobile_client)
 
     def initialize(self):
         """
@@ -415,7 +418,7 @@ class MainWindow(Tkinter.Tk):
         self.update_idletasks()
         #print self.mobile_client.get_registered_devices()
         try:
-            stream_audio = self.mobile_client.get_stream_url(track['id'], '39194ed805c89df6')
+            stream_audio = self.mobile_client.get_stream_url(track['id'], self.device_id)
             #stream_audio = self.mobile_client.get_stream_url(track['id'], '0123456789abcdef')
             print stream_audio
             #stream_audio = self.web_client.get_stream_audio(track['id'])
@@ -582,6 +585,44 @@ class MainWindow(Tkinter.Tk):
         #print playlist_tracks
         return TrackList(playlist_tracks)
 
+class ChooseDevice(Tkinter.Toplevel):
+    """
+
+    """
+    def __init__(self, parent, mobile_client):
+        Tkinter.Toplevel.__init__(self, parent)
+        self.parent = parent
+
+        self.text_label = Tkinter.Label(self, text='Choose a mobile device ID.')
+        self.text_label.pack()
+
+        dev_list = []
+        for dev in mobile_client.get_registered_devices():
+            if dev['type'] == 'ANDROID' or dev['type'] == 'IOS':
+                dev_list.append(dev['friendlyName'] + ':' + dev['id'])
+
+        self.device_chooser_var = None
+        self.device_chooser = ttk.Combobox(self, textvariable=self.device_chooser_var, values=dev_list)
+        self.device_chooser.bind('<<ComboboxSelected>>', self.device_chosen)
+
+        self.device_chooser.pack()
+        self.center()
+
+    def device_chosen(self, e):
+        device_choice = self.device_chooser.get()
+        #print(device_choice)
+        self.parent.device_id = device_choice.split(':0x')[1]
+        self.destroy()
+
+
+    def center(self):
+        self.update_idletasks()
+        parent_x, parent_y = (int(_) for _ in self.parent.geometry().split('+', 1)[1].split('+'))
+        parent_w, parent_h = (int(_) for _ in self.parent.geometry().split('+', 1)[0].split('x'))
+        w, h = (int(_) for _ in self.geometry().split('+')[0].split('x'))
+        x = parent_x + parent_w/2 - w/2
+        y = parent_y + parent_h/2 - h/2
+        self.geometry('+%d+%d' % (x, y))
 
 if __name__ == "__main__":
     web_client = Webclient()
@@ -594,14 +635,13 @@ if __name__ == "__main__":
             exit(0)
         email = auth_handle.uname
         password = auth_handle.passwd
-        if (web_client.login(email, password) and
-                #mobile_client.login(email, password, Mobileclient.FROM_MAC_ADDRESS)):
-                mobile_client.login(email, password, '39194ed805c89df6')):
+        #if (web_client.login(email, password) and
+        if mobile_client.login(email, password, Mobileclient.FROM_MAC_ADDRESS):
             authenticated = True
         else:
             force_prompt = True
 
     app = MainWindow(None, web_client, mobile_client)
     app.title('PyPlayMusic')
-    app.center()
+    #app.center()
     app.mainloop()
