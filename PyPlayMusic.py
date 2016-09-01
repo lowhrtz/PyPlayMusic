@@ -23,6 +23,8 @@ from player import Player
 # Module constants
 #TMP_MP3 = "tmp.mp3"
 DEFAULT_IMAGE = "notes.png"
+LOOP_INTERVAL = 100
+
 #SAMPLE_RATE = 44100
 
 
@@ -497,14 +499,14 @@ class MainWindow(Tkinter.Tk):
         if self.track_listbox.data != tracks: return  # This removes any stale loops that result from new searches
         #if self.player_state != "stopped" and not self.channel.done:
         if self.player_state == "play":
-            self.after(100, self.play_loop, tracks)
+            self.after(LOOP_INTERVAL, self.play_loop, tracks)
         elif self.player_state == "next":
             #print "NEXT!"
             self.enable_controls(False)
             #self.player.set_state(Gst.State.NULL)
             self.player.stop()
             self.play_track(tracks.next(), tracks)
-            self.after(100, self.play_loop, tracks)
+            self.after(LOOP_INTERVAL, self.play_loop, tracks)
         self.update_controls()
 
     def update_controls(self):
@@ -526,7 +528,7 @@ class MainWindow(Tkinter.Tk):
         #pos = self.player.get_position()
         #self.progress['value'] = pos
         if self.pause_state == "unpaused":
-            self.progress['value'] += 100
+            self.progress['value'] += LOOP_INTERVAL
         pos = self.progress['value']
         self.current_time['text'] = convert_milli_to_std(pos)
         if self.progress['value'] >= self.progress['maximum']:
