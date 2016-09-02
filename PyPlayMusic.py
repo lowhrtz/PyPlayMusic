@@ -583,6 +583,7 @@ class MainWindow(Tkinter.Tk):
             print("Error: " + str(e))
             print("Error retreiving song image.")
             print("URL: " + url)
+            return ImageTk.PhotoImage()
         pil_image = Image.open(data_stream)
         return ImageTk.PhotoImage(pil_image)
 
