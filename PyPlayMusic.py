@@ -1,16 +1,14 @@
 #!/usr/bin/python
 import io
 from PIL import Image, ImageTk
-import os
 import random
 import re
-import sys
 import tkFont
 import Tkinter
 import ttk
 from urllib2 import urlopen
 
-from gmusicapi import Mobileclient, Webclient
+from gmusicapi import Mobileclient
 #import swmixer
 #import gi
 #gi.require_version('Gst', '1.0')
