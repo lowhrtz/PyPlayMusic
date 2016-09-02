@@ -22,7 +22,8 @@ from player import Player
 
 # Module constants
 #TMP_MP3 = "tmp.mp3"
-DEFAULT_IMAGE = "notes.png"
+#DEFAULT_IMAGE = "notes.png"
+DEFAULT_IMAGE = "PyPlayMusicIcon.png"
 LOOP_INTERVAL = 100
 
 #SAMPLE_RATE = 44100
@@ -154,6 +155,8 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         self.protocol('WM_DELETE_WINDOW', self.close_window)
+        icon = ImageTk.PhotoImage(file=DEFAULT_IMAGE)
+        self.tk.call('wm', 'iconphoto', self._w, icon)
         self.grid()
 
         # Set up widgets
@@ -289,10 +292,11 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         self.player_state = "stopped"
-        try:
-            self.channel.stop()
-        except:
-            pass
+        self.player.stop()
+        #try:
+        #    self.channel.stop()
+        #except:
+        #    pass
 
     def on_search_choose_click(self, event):
         """
@@ -477,7 +481,7 @@ class MainWindow(Tkinter.Tk):
             self.player.load_url(stream_audio_url)
             self.player.play()
         except Exception, e:
-            print("Error: " + e)
+            print("Error: " + str(e))
             print("Error retrieving track: " + track['title'])
             self.play_track(tracks.next(), tracks)
             return
@@ -576,7 +580,7 @@ class MainWindow(Tkinter.Tk):
             image_bytes = urlopen(url).read()
             data_stream = io.BytesIO(image_bytes)
         except Exception, e:
-            print("Error: " + e)
+            print("Error: " + str(e))
             print("Error retreiving song image.")
             print("URL: " + url)
         pil_image = Image.open(data_stream)
