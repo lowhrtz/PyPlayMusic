@@ -39,7 +39,7 @@ def convert_milli_to_std(millisecs):
     secs = millisecs / 1000
     mins = secs / 60
     secs_rem = secs % 60
-    if secs_rem >= 0 and secs_rem < 10:
+    if 0 <= secs_rem < 10:
         secs = "0" + str(secs_rem)
     else:
         secs = str(secs_rem)
