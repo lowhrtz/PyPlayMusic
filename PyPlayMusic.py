@@ -9,22 +9,13 @@ import ttk
 from urllib2 import urlopen
 
 from gmusicapi import Mobileclient
-#import swmixer
-#import gi
-#gi.require_version('Gst', '1.0')
-#from gi.repository import Gst
-#Gst.init(None)
 
 import auth
 from player import Player
 
 # Module constants
-#TMP_MP3 = "tmp.mp3"
-#DEFAULT_IMAGE = "notes.png"
 DEFAULT_IMAGE = "PyPlayMusicIcon.png"
 LOOP_INTERVAL = 100
-
-#SAMPLE_RATE = 44100
 
 
 def convert_milli_to_std(millisecs):
@@ -134,9 +125,7 @@ class MainWindow(Tkinter.Tk):
         """
         Tkinter.Tk.__init__(self, parent)
         self.parent = parent
-        #self.web_client = web_client
         self.mobile_client = mobile_client
-        #self.player = Gst.ElementFactory.make("playbin", "player")
         self.player = Player()
         self.device_id = None
         self.library = None
@@ -175,7 +164,6 @@ class MainWindow(Tkinter.Tk):
         self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
                                              font=tkFont.Font(family='Helvetica', size=12, weight='bold'),
                                              height=15, width=40)
-        #self.track_listbox.config(yscrollcommand=listbox_scrollbar.set)
         self.track_listbox.bind("<Double-Button-1>", self.select_track)
         self.track_listbox.bind("<Return>", self.select_track)
         listbox_scrollbar.config(command=self.track_listbox.yview)
@@ -218,19 +206,15 @@ class MainWindow(Tkinter.Tk):
         self.next_button.grid(in_=self.controls_frame, column=4, row=0)
 
         # Final initializations
-        #self.player_state = "next"
         self.player_state = "play"
         self.pause_state = "unpaused"
 
         self.entry.focus_set()
-        #swmixer.init(samplerate=SAMPLE_RATE, chunksize=1024, stereo=True)
-        #swmixer.start()
 
         self.library = self.mobile_client.get_all_songs()
 
         def key(e):
             keysym = e.keysym_num
-            #print(keysym)
             lower_n = 110
             upper_n = 78
             space = 32
@@ -250,8 +234,7 @@ class MainWindow(Tkinter.Tk):
                 self.seek_forward(5)
             elif keysym == down_key:
                 self.seek_reverse(30)
-                
-        #self.bind("<Key>", key)
+
         self.fileinfo.bind("<Key>", key)
 
     def center(self):
@@ -267,20 +250,12 @@ class MainWindow(Tkinter.Tk):
         y = h/2 - size[1]/2
         self.geometry("+%d+%d" % (x, y))
 
-#    def cleanup(self):
-#        """
-#        Cleans up the temp file
-#        :return: None
-#        """
-#        if os.path.isfile(TMP_MP3):
-#            os.remove(TMP_MP3)
 
     def close_window(self):
         """
         Close window override.
         :return: None
         """
-        #self.cleanup()
         self.player_final_close()
         self.destroy()
 
@@ -291,10 +266,6 @@ class MainWindow(Tkinter.Tk):
         """
         self.player_state = "stopped"
         self.player.stop()
-        #try:
-        #    self.channel.stop()
-        #except:
-        #    pass
 
     def on_search_choose_click(self, event):
         """
@@ -304,7 +275,6 @@ class MainWindow(Tkinter.Tk):
         """
         current_search_index = self.search_choose.current()
         current_search = self.search_choose['values'][current_search_index]
-        #print current_search
         if current_search == "Playlists":
             self.playlists['state'] = "readonly"
             self.entry['state'] = "disabled"
@@ -320,18 +290,10 @@ class MainWindow(Tkinter.Tk):
         :param event: Tk event
         :return: None
         """
-        #self.channel.done = True
-        #self.player.set_state(Gst.State.NULL)
         self.player.stop()
-        #try:
-        #    self.channel.stop()
-        #except AttributeError:
-        #    pass
         playlist_index = self.playlists.current()
         playlist_dict = self.playlists.data[playlist_index]
         playlist_id = playlist_dict['id']
-        #print playlist_id
-        #print playlist_dict['tracks'][0]
         playlist_tracks = self.get_playlist_tracks(playlist_dict['tracks'])
         if self.rand_list_var.get():
             random.shuffle(playlist_tracks)
@@ -345,7 +307,6 @@ class MainWindow(Tkinter.Tk):
         self.playlists.data = []
         name_list = []
         for datum in self.mobile_client.get_all_user_playlist_contents():
-            #print datum['name']
             if datum['name'] != '':
                 self.playlists.data.append(datum)
                 name_list.append(datum['name'])
@@ -366,12 +327,6 @@ class MainWindow(Tkinter.Tk):
         """
         self.player_state = "new_search"
         self.enable_controls(False)
-        #try:
-        #    self.channel.stop()
-        #    self.channel.done = True
-        #except AttributeError:
-        #    pass
-        #self.player.set_state(Gst.State.NULL)
         self.player.stop()
         search_tracks = TrackList([track for track in self.library
                                    if self.track_matches(track)])
@@ -422,13 +377,9 @@ class MainWindow(Tkinter.Tk):
         """
         self.fileinfo.focus()
         if self.pause_state == "unpaused":
-            #self.channel.pause()
-            #self.player.set_state(Gst.State.PAUSED)
             self.player.pause()
             self.pause_state = "paused"
         else:
-            #self.channel.unpause()
-            #self.player.set_state(Gst.State.PLAYING)
             self.player.unpause()
             self.pause_state = "unpaused"
 
@@ -440,11 +391,8 @@ class MainWindow(Tkinter.Tk):
         self.fileinfo.focus()
         self.enable_controls(False)
         self.search_button['state'] = "disabled"
-        #self.channel.stop()
-        #self.player.set_state(Gst.State.NULL)
         self.player.stop()
         self.player_state = "next"
-        #self.channel.done = True
 
     def play(self, tracks):
         """
@@ -471,11 +419,8 @@ class MainWindow(Tkinter.Tk):
         self.total_time['text'] = convert_milli_to_std(track['durationMillis'])
         self.update_listbox(tracks)
         self.update_idletasks()
-        #print self.mobile_client.get_registered_devices()
         try:
             stream_audio_url = self.mobile_client.get_stream_url(track['id'], self.device_id)
-            #self.player.set_property('uri', stream_audio_url)
-            #self.player.set_state(Gst.State.PLAYING)
             self.player.load_url(stream_audio_url)
             self.player.play()
         except Exception, e:
@@ -483,7 +428,6 @@ class MainWindow(Tkinter.Tk):
             print("Error retrieving track: " + track['title'])
             self.play_track(tracks.next(), tracks)
             return
-        #self.player_state = "next"
         self.player_state = "play"
         self.pause_state = "unpaused"
         self.enable_controls(True)
@@ -494,18 +438,15 @@ class MainWindow(Tkinter.Tk):
 
     def play_loop(self, tracks):
         """
-        Virtual loop that is called every 100 milliseconds for updating the time and position gui widgets.
+        Virtual loop that is called every LOOP_INTERVAL milliseconds for updating the time and position gui widgets.
         :param tracks: TrackList
         :return: None
         """
         if self.track_listbox.data != tracks: return  # This removes any stale loops that result from new searches
-        #if self.player_state != "stopped" and not self.channel.done:
         if self.player_state == "play":
             self.after(LOOP_INTERVAL, self.play_loop, tracks)
         elif self.player_state == "next":
-            #print "NEXT!"
             self.enable_controls(False)
-            #self.player.set_state(Gst.State.NULL)
             self.player.stop()
             self.play_track(tracks.next(), tracks)
             self.after(LOOP_INTERVAL, self.play_loop, tracks)
@@ -516,33 +457,12 @@ class MainWindow(Tkinter.Tk):
         Updates the time and position gui widgets.
         :return: None
         """
-        #pos = convert_sample_to_milli(self.channel.get_position(), SAMPLE_RATE)
-        #success, pos = self.player.query_position(Gst.Format.TIME)
-        #if success:
-        #    pos_milli = pos / 1000000
-        #    self.progress['value'] = pos_milli
-        #    self.current_time['text'] = convert_milli_to_std(pos_milli)
-        #    if self.pause_state == "unpaused" and pos != 0 and self.last_pos == pos:
-        #        self.last_pos = None
-        #        self.player_state = "next"
-        #    else:
-        #        self.last_pos = pos
-        #pos = self.player.get_position()
-        #self.progress['value'] = pos
         if self.pause_state == "unpaused":
             self.progress['value'] += LOOP_INTERVAL
         pos = self.progress['value']
         self.current_time['text'] = convert_milli_to_std(pos)
         if self.progress['value'] >= self.progress['maximum']:
             self.player_state = "next"
-        #if self.pause_state == "unpaused" and pos != 0 and self.last_pos <= pos:
-        #    self.last_pos = None
-        #    self.player_state = "next"
-        #else:
-        #    self.last_pos = pos
-            
-        #self.progress['value'] = pos
-        #self.current_time['text'] = convert_milli_to_std(pos)
 
     def change_fileinfo(self, metadata):
         """
@@ -551,14 +471,13 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         global next_image
-        #print metadata
         if metadata.has_key('albumArtRef'):
             next_image = self.get_photo_image_from_url(metadata['albumArtRef'][0]['url'])
         elif metadata.has_key('artistArtRef'):
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
             next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE))
-        self.album_image.configure(image = next_image)
+        self.album_image.configure(image=next_image)
         if metadata.has_key('year'):
             year = str(metadata['year'])
         else:
@@ -579,7 +498,7 @@ class MainWindow(Tkinter.Tk):
             data_stream = io.BytesIO(image_bytes)
         except Exception, e:
             print("Error: " + str(e))
-            print("Error retreiving song image.")
+            print("Error retrieving song image.")
             print("URL: " + url)
             return ImageTk.PhotoImage()
         pil_image = Image.open(data_stream)
@@ -627,8 +546,6 @@ class MainWindow(Tkinter.Tk):
         self.enable_controls(False)
         self.search_button['state'] = "disabled"
         self.player_state = "seek"
-        #self.channel.stop()
-        #self.player.set_state(Gst.State.NULL)
         self.player.stop()
         curselection = self.track_listbox.curselection()[0]
         tracks = self.track_listbox.data
@@ -653,8 +570,6 @@ class MainWindow(Tkinter.Tk):
         self.fileinfo.focus()
         seek_ratio = event.x / float(self.progress.winfo_width())
         seek_milli = seek_ratio * self.progress['maximum']
-        #self.channel.set_position(convert_milli_to_sample(seek_milli, SAMPLE_RATE))
-        #self.player.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, seek_milli * 1000000)
         self.player.set_position(seek_milli)
         self.progress['value'] = int(seek_milli)
         self.current_time['text'] = convert_milli_to_std(int(seek_milli))
@@ -662,12 +577,7 @@ class MainWindow(Tkinter.Tk):
     def seek_relative(self, direction, seconds):
         if direction == 0: direction = 1
         direction_sign = direction/abs(direction)
-        #success, current_pos = self.player.query_position(Gst.Format.TIME)
-        #success, duration = self.player.query_duration(Gst.Format.TIME)
-        #new_pos = current_pos + direction_sign * seconds * 1000000000
-        #current_pos = self.player.get_position()
         current_pos = self.progress['value']
-        #duration = self.player.get_duration()
         duration = self.progress['maximum']
         new_pos = current_pos + direction_sign * seconds * 1000
         if new_pos < 0:
@@ -675,9 +585,7 @@ class MainWindow(Tkinter.Tk):
             self.progress['value'] = 0
         elif new_pos >= duration:
             self.progress['value'] = self.progress['maximum']
-            #self.player_state = "next"
             return
-        #self.player.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, new_pos)
         self.player.set_position(new_pos)
         self.progress['value'] = new_pos
 
@@ -696,8 +604,8 @@ class MainWindow(Tkinter.Tk):
         id_list = [item['trackId'] for item in playlist_dict_tracks]
         playlist_tracks = [track for track in self.library if track['id'] in id_list]
         playlist_tracks.sort(key = lambda track: id_list.index(track['id']))
-        #print playlist_tracks
         return TrackList(playlist_tracks)
+
 
 class ChooseDevice(Tkinter.Toplevel):
     """
@@ -724,10 +632,8 @@ class ChooseDevice(Tkinter.Toplevel):
 
     def device_chosen(self, e):
         device_choice = self.device_chooser.get()
-        #print(device_choice)
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
-
 
     def center(self):
         self.update_idletasks()
@@ -739,7 +645,6 @@ class ChooseDevice(Tkinter.Toplevel):
         self.geometry('+%d+%d' % (x, y))
 
 if __name__ == "__main__":
-    #web_client = Webclient()
     mobile_client = Mobileclient()
     authenticated = False
     force_prompt = False
@@ -749,7 +654,6 @@ if __name__ == "__main__":
             exit(0)
         email = auth_handle.uname
         password = auth_handle.passwd
-        #if (web_client.login(email, password) and
         if mobile_client.login(email, password, Mobileclient.FROM_MAC_ADDRESS):
             authenticated = True
         else:
@@ -757,5 +661,4 @@ if __name__ == "__main__":
 
     app = MainWindow(None, mobile_client)
     app.title('PyPlayMusic')
-    #app.center()
     app.mainloop()
