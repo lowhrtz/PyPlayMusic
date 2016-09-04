@@ -11,7 +11,10 @@ from urllib2 import urlopen
 from gmusicapi import Mobileclient
 
 import auth
-from player import Player
+try:
+    from player import Player
+except:
+    from player_vlc import Player
 
 # Module constants
 DEFAULT_IMAGE = "PyPlayMusicIcon.png"
