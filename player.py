@@ -5,19 +5,23 @@ Gst.init(None)
 
 class Player(object):
     def __init__(self):
-        self.element = Gst.ElementFactory.make("playbin", "player")
+        self.url = None
+        self.playbin = Gst.ElementFactory.make("playbin", "player")
+        fakesink = Gst.ElementFactory.make("fakesink", "fakesink")
+        self.playbin.set_property("video-sink", fakesink)
 
     def load_url(self, url):
-        self.element.set_property('uri', url)
+        self.url = url
+        self.playbin.set_property('uri', url)
 
     def play(self):
-        self.element.set_state(Gst.State.PLAYING)
+        self.playbin.set_state(Gst.State.PLAYING)
 
     def stop(self):
-        self.element.set_state(Gst.State.NULL)
+        self.playbin.set_state(Gst.State.NULL)
 
     def pause(self):
-        self.element.set_state(Gst.State.PAUSED)
+        self.playbin.set_state(Gst.State.PAUSED)
 
     def unpause(self):
         self.play()
@@ -26,7 +30,7 @@ class Player(object):
         success = False
         i = 0
         while not success:
-            success, dur = self.element.query_duration(Gst.Format.TIME)
+            success, dur = self.playbin.query_duration(Gst.Format.TIME)
             i += 1
             if i > 1000: return 0
         return dur / 1000000
@@ -39,9 +43,37 @@ class Player(object):
         #    i += 1
         #    print(i, success, pos)
         #    if i > 1000: return 0
-        success, pos = self.element.query_position(Gst.Format.TIME)
+        success, pos = self.playbin.query_position(Gst.Format.TIME)
         print(success, pos)
         return pos / 1000000
 
     def set_position(self, position):
-        self.element.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, position * 1000000)
+        self.playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, position * 1000000)
+        #self.playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.NONE, position * 1000000)
+        while self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.ASYNC:
+            continue
+        if self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.FAILURE:
+            print('Lost Stream. Fixing...')
+            self.stop()
+            while self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.ASYNC:
+                continue
+            print('Stop State:')
+            print(self.playbin.get_state(1000))
+            #self.load_url(self.url)
+            #while self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.ASYNC:
+            #    continue
+            #print('Load State:')
+            #print(self.playbin.get_state(1000))
+            print('Playing...')
+            self.play()
+            while self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.ASYNC:
+                print(self.playbin.get_state(1000))
+                continue
+            print('Play State:')
+            print(self.playbin.get_state(1000))
+            self.playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, position * 1000000)
+            while self.playbin.get_state(1000)[0] == Gst.StateChangeReturn.ASYNC:
+                print(self.playbin.get_state(1000)[2])
+                continue
+            print('Seek State:')
+            print(self.playbin.get_state(1000))

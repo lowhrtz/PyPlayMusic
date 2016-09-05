@@ -3,6 +3,7 @@ import io
 from PIL import Image, ImageTk
 import random
 import re
+import sys
 import tkFont
 import Tkinter
 import ttk
@@ -11,10 +12,22 @@ from urllib2 import urlopen
 from gmusicapi import Mobileclient
 
 import auth
-try:
-    from player import Player
-except:
-    from player_vlc import Player
+args = sys.argv
+if len(args) > 1:
+    backend = args[1]
+    try:
+        backend_module = __import__('player_' + backend, fromlist=['Player'])
+        Player = getattr(backend_module, 'Player')
+    except ImportError:
+        print('Backend, ' + backend + ', not found.')
+        print('Look for a file named player_' + backend + '.py, if it is missing')
+        print('either an invalid backend was entered or the file is missing.')
+        sys.exit(1)
+else:
+    try:
+        from player import Player
+    except:
+        from player_vlc import Player
 
 # Module constants
 DEFAULT_IMAGE = "PyPlayMusicIcon.png"
