@@ -18,7 +18,8 @@ if len(args) > 1:
     try:
         backend_module = __import__('player_' + backend, fromlist=['Player'])
         Player = getattr(backend_module, 'Player')
-    except ImportError:
+    except ImportError, error:
+        print(str(error))
         print('Backend, ' + backend + ', not found.')
         print('Look for a file named player_' + backend + '.py, if it is missing')
         print('either an invalid backend was entered or the file is missing.')
