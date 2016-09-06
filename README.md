@@ -12,5 +12,5 @@ Note About Player Backends
 The default backend uses GStreamer 1.0 and should be available on
 most current Gnome/GTK systems. There is a backup backend that uses
 VLC. VLC needs to be installed to use it. Also, python-vlc needs to
-be installed.<br />Using pip on Ubuntu: sudo pip install python-vlc.
+be installed. Using pip on Ubuntu: sudo pip install python-vlc.
 Assuming pip is on the path, Windows should be the same but without sudo.
