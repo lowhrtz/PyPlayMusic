@@ -267,7 +267,6 @@ class MainWindow(Tkinter.Tk):
         y = h/2 - size[1]/2
         self.geometry("+%d+%d" % (x, y))
 
-
     def close_window(self):
         """
         Close window override.
