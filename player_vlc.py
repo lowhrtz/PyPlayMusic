@@ -9,16 +9,29 @@ class Player(object):
         self.media_player.set_mrl(url)
 
     def play(self):
-        self.media_player.play()
+        if self.media_player.play() == -1:
+            return False
+        return True
+
+    def is_playing(self):
+        state = self.media_player.get_state()
+        #print state
+        if state == vlc.State.Playing\
+                or state == vlc.State.Opening\
+                or state == vlc.State.Paused:
+            return True
+        return False
 
     def stop(self):
         self.media_player.stop()
+        return True
 
     def pause(self):
         self.media_player.pause()
+        return True
 
     def unpause(self):
-        self.media_player.pause()
+        return self.pause()
 
     def get_duration(self):
         return self.media_player.get_length()
@@ -28,3 +41,10 @@ class Player(object):
 
     def set_position(self, position):
         self.media_player.set_time(int(position))
+        state = self.media_player.get_state()
+        #print state
+        if state == vlc.State.Ended\
+                or state == vlc.State.Stopped\
+                or state == vlc.State.Error:
+            return False
+        return True

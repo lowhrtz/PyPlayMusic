@@ -422,7 +422,7 @@ class MainWindow(Tkinter.Tk):
         self.play_track(track, tracks)
         self.play_loop(tracks)
 
-    def play_track(self, track, tracks):
+    def play_track(self, track, tracks, position=None):
         """
         Plays the given track.
         :param track: track to be played
@@ -439,6 +439,11 @@ class MainWindow(Tkinter.Tk):
             stream_audio_url = self.mobile_client.get_stream_url(track['id'], self.device_id)
             self.player.load_url(stream_audio_url)
             self.player.play()
+            if position:
+                print 'Setting Position...'
+                self.player.set_position(position)
+                self.progress['value'] = position
+                self.current_time['text'] = convert_milli_to_std(position)
         except Exception, e:
             print("Error: " + str(e))
             print("Error retrieving track: " + track['title'])
@@ -459,6 +464,13 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         if self.track_listbox.data != tracks: return  # This removes any stale loops that result from new searches
+        if not self.player.is_playing()\
+                and self.player_state == "play":
+            print 'Problem with audio stream. Fixing...'
+            self.enable_controls(False)
+            self.play_track(tracks.current(), tracks, self.progress['value'])
+            self.after(LOOP_INTERVAL, self.play_loop, tracks)
+            return
         if self.player_state == "play":
             self.after(LOOP_INTERVAL, self.play_loop, tracks)
         elif self.player_state == "next":
@@ -586,7 +598,9 @@ class MainWindow(Tkinter.Tk):
         self.fileinfo.focus()
         seek_ratio = event.x / float(self.progress.winfo_width())
         seek_milli = seek_ratio * self.progress['maximum']
-        self.player.set_position(seek_milli)
+        if not self.player.set_position(seek_milli):
+            self.player.stop()
+            return
         self.progress['value'] = int(seek_milli)
         self.current_time['text'] = convert_milli_to_std(int(seek_milli))
 
@@ -602,8 +616,11 @@ class MainWindow(Tkinter.Tk):
         elif new_pos >= duration:
             self.progress['value'] = self.progress['maximum']
             return
-        self.player.set_position(new_pos)
+        if not self.player.set_position(new_pos):
+            self.player.stop()
+            return
         self.progress['value'] = new_pos
+        self.current_time['text'] = convert_milli_to_std(new_pos)
 
     def seek_forward(self, seconds):
         self.seek_relative(1, seconds)
@@ -630,6 +647,7 @@ class ChooseDevice(Tkinter.Toplevel):
     def __init__(self, parent, mobile_client):
         Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
+        self.wm_title('Choose Device')
 
         self.text_label = Tkinter.Label(self, text='Choose a mobile device ID.')
         self.text_label.pack()
