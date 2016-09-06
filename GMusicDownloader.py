@@ -1,6 +1,7 @@
 import json
 import os
-import tkFont
+#import tkFont
+import tkFileDialog
 import Tkinter
 import ttk
 from urllib2 import urlopen
@@ -9,6 +10,7 @@ from eyed3.id3.frames import ImageFrame
 from eyed3.mp3 import Mp3AudioFile
 from gmusicapi import Mobileclient
 import auth
+
 
 class MainWindow(Tkinter.Tk):
     """
@@ -162,6 +164,7 @@ class MainWindow(Tkinter.Tk):
             ChooseDevice(self, self.mobile_client)
             print(self.device_id)
             return
+        base_dir = tkFileDialog.askdirectory()
         steps_number = self.count_steps()
         progress = ProgressWindow(self, 0, steps_number)
         progress.set_message('Downloading...')
@@ -179,7 +182,7 @@ class MainWindow(Tkinter.Tk):
                     #print(album_item)
                     album_name = album_item['values'][0].split(':', 1)[1]
                     progress.set_message('Retreiving: ' + album_name)
-                    os.makedirs(os.path.join(artist_name, album_name))
+                    os.makedirs(os.path.join(base_dir, artist_name, album_name))
                     progress.steps_complete(1)
                     tracks = self.tree.get_children(album)
                     for track_child in tracks:
@@ -187,13 +190,13 @@ class MainWindow(Tkinter.Tk):
                         track_data = track_item['values'][0]
                         track = json.loads(track_data)
                         progress.set_message('Retreiving: ' + track['title'])
-                        self.download_track(track, os.path.join(artist_name, album_name))
+                        self.download_track(track, os.path.join(base_dir, artist_name, album_name))
                         progress.steps_complete(1)
             elif data.startswith('album:'):
                 progress.steps_complete(1)
                 album_name = data.split(':', 1)[1]
                 progress.set_message('Retreiving: ' + album_name)
-                os.makedirs(album_name)
+                os.makedirs(os.path.join(base_dir, album_name))
                 progress.steps_complete(1)
                 tracks = self.tree.get_children(selected_item)
                 for track_child in tracks:
@@ -201,13 +204,13 @@ class MainWindow(Tkinter.Tk):
                     track_data = track_item['values'][0]
                     track = json.loads(track_data)
                     progress.set_message('Retreiving: ' + track['title'])
-                    self.download_track(track, album_name)
+                    self.download_track(track, os.path.join(base_dir, album_name))
                     progress.steps_complete(1)
             else:
                 track = json.loads(data)
                 #print track['title']
                 progress.set_message('Retreiving: ' + track['title'])
-                self.download_track(track)
+                self.download_track(track, base_dir)
                 progress.steps_complete(1)
         progress.destroy()
 
