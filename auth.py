@@ -74,7 +74,17 @@ class AuthHandler(object):
             self.passwd = decrypt(cached.read())
         else:
             auth_win = AuthWindow(None, title)
-            auth_win.mainloop()
+            # auth_win.mainloop()
+            # This used to be a call to auth_win.mainloop() but this caused issues when the splash was introduced
+            import time
+            while True:
+                time.sleep(.1) # This causes it to loop at the same(or at least comparable) rate as mainloop
+                try:
+                    auth_win.update_idletasks()
+                    auth_win.update()
+                except Tkinter.TclError:
+                    # A TclError is raised when update is called after the window has been destroyed
+                    break
             if not auth_win.canceled:
                 self.uname = auth_win.uname
                 self.passwd = auth_win.passwd
@@ -93,12 +103,12 @@ class AuthWindow(Tkinter.Tk):
         :param title: title of the window
         :return: None
         """
-        Tkinter.Tk.__init__(self,parent)
+        Tkinter.Tk.__init__(self, parent)
         self.parent = parent
         self.title(title)
         self.protocol('WM_DELETE_WINDOW', self.on_cancel_click)
         self.canceled = True
-        self.font = tkFont.Font(family='Helvetica', size=13)
+        self.font = tkFont.Font(self, family='Helvetica', size=13)
         self.initialize()
 
     def initialize(self):
@@ -108,9 +118,9 @@ class AuthWindow(Tkinter.Tk):
         """
         self.grid()
 
-        self.u_field_variable = Tkinter.StringVar()
+        self.u_field_variable = Tkinter.StringVar(self)
         self.user_field = Tkinter.Entry(self, textvariable=self.u_field_variable, font=self.font)
-        self.p_field_variable = Tkinter.StringVar()
+        self.p_field_variable = Tkinter.StringVar(self)
         self.pass_field = Tkinter.Entry(self, textvariable=self.p_field_variable, show='*', font=self.font)
         auth_button = Tkinter.Button(self, text=u"OK", command=self.on_auth_click, font=self.font)
         cancel_button = Tkinter.Button(self, text=u"Cancel", command=self.on_cancel_click, font=self.font)
@@ -165,7 +175,7 @@ class AuthWindow(Tkinter.Tk):
         :return: None
         """
         self.canceled = True
-        self.quit()
+        self.destroy()
 
 if __name__ == "__main__":
     app = AuthWindow(None, "Test")

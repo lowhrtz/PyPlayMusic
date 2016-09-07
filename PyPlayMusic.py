@@ -151,6 +151,7 @@ class MainWindow(Tkinter.Tk):
 
         self.initialize()
         self.center()
+        splash.master.destroy()
         ChooseDevice(self, mobile_client)
 
     def initialize(self):
@@ -159,7 +160,7 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         self.protocol('WM_DELETE_WINDOW', self.close_window)
-        icon = ImageTk.PhotoImage(file=DEFAULT_IMAGE)
+        icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
         self.tk.call('wm', 'iconphoto', self._w, icon)
         self.grid()
 
@@ -171,7 +172,7 @@ class MainWindow(Tkinter.Tk):
         )
         self.search_choose.current(0)
         self.search_choose.bind("<<ComboboxSelected>>", self.on_search_choose_click)
-        self.entry_variable = Tkinter.StringVar()
+        self.entry_variable = Tkinter.StringVar(master=self)
         self.entry = Tkinter.Entry(self, textvariable=self.entry_variable)
         self.entry.bind("<Return>", self.on_press_enter)
         self.entry.bind("<KP_Enter>", self.on_press_enter)
@@ -179,7 +180,7 @@ class MainWindow(Tkinter.Tk):
         listbox_frame = Tkinter.Frame(self)
         listbox_scrollbar = Tkinter.Scrollbar(self)
         self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
-                                             font=tkFont.Font(family='Helvetica', size=12, weight='bold'),
+                                             font=tkFont.Font(root=self, family='Helvetica', size=12, weight='bold'),
                                              height=15, width=40)
         self.track_listbox.bind("<Double-Button-1>", self.select_track)
         self.track_listbox.bind("<Return>", self.select_track)
@@ -188,9 +189,9 @@ class MainWindow(Tkinter.Tk):
         self.playlists['values'] = self.get_playlists()
         self.playlists.current(0)
         self.playlists.bind("<<ComboboxSelected>>", self.on_playlists_click)
-        self.rand_list_var = Tkinter.IntVar()
+        self.rand_list_var = Tkinter.IntVar(master=self)
         randomize_list = Tkinter.Checkbutton(self, text="Shuffle Results", variable=self.rand_list_var)
-        self.default_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE))
+        self.default_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
         self.album_image = Tkinter.Label(self, image=self.default_image)
         self.album_image['image'] = self.default_image
         self.fileinfo = Tkinter.Label(self, anchor="w", justify=Tkinter.LEFT)
@@ -348,7 +349,7 @@ class MainWindow(Tkinter.Tk):
                                    if self.track_matches(track)])
         if len(search_tracks) == 0:
             global next_image
-            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE))
+            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
             self.album_image.configure(image = next_image)
             self.fileinfo['text'] = "Nothing matched your search!"
             return
@@ -504,7 +505,7 @@ class MainWindow(Tkinter.Tk):
         elif metadata.has_key('artistArtRef'):
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
-            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE))
+            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
         self.album_image.configure(image=next_image)
         if metadata.has_key('year'):
             year = str(metadata['year'])
@@ -530,7 +531,7 @@ class MainWindow(Tkinter.Tk):
             print("URL: " + url)
             return ImageTk.PhotoImage()
         pil_image = Image.open(data_stream)
-        return ImageTk.PhotoImage(pil_image)
+        return ImageTk.PhotoImage(pil_image, master=self)
 
     def enable_controls(self, enable):
         """
@@ -640,12 +641,51 @@ class MainWindow(Tkinter.Tk):
         return TrackList(playlist_tracks)
 
 
-class ChooseDevice(Tkinter.Toplevel):
+class CenterableToplevel(Tkinter.Toplevel):
+    def __init__(self, parent):
+        Tkinter.Toplevel.__init__(self, parent)
+        self.parent = parent
+
+    def center(self):
+        self.update_idletasks()
+
+        if self.parent is None:
+            parent_x, parent_y = 0, 0
+            parent_w, parent_h = self.winfo_screenwidth(), self.winfo_screenheight()
+        else:
+            parent_x, parent_y = (int(_) for _ in self.parent.geometry().split('+', 1)[1].split('+'))
+            parent_w, parent_h = (int(_) for _ in self.parent.geometry().split('+', 1)[0].split('x'))
+        w, h = (int(_) for _ in self.geometry().split('+')[0].split('x'))
+        x = parent_x + parent_w / 2 - w / 2
+        y = parent_y + parent_h / 2 - h / 2
+        self.geometry('+%d+%d' % (x, y))
+
+
+class Splash(CenterableToplevel):
+    def __init__(self, parent):
+        CenterableToplevel.__init__(self, parent)
+        #self.parent = parent
+        self.master.withdraw()
+        self.overrideredirect(True)
+        self.geometry('400x200')
+        #self.config(bg='#fd8c00')
+
+        inset = Tkinter.Frame(self, bg='#ed7c00', padx=10, pady=10)
+        inset.pack(fill=Tkinter.BOTH, expand=1)
+        message = Tkinter.Label(inset, text='PyPlayMusic is loading...',
+                                font=tkFont.Font(inset, family='Times', size=16, weight='bold'),
+                                bg='#fd8c00')
+        message.pack(fill=Tkinter.BOTH, expand=1)
+
+        self.center()
+
+
+class ChooseDevice(CenterableToplevel):
     """
 
     """
     def __init__(self, parent, mobile_client):
-        Tkinter.Toplevel.__init__(self, parent)
+        CenterableToplevel.__init__(self, parent)
         self.parent = parent
         self.wm_title('Choose Device')
 
@@ -669,14 +709,7 @@ class ChooseDevice(Tkinter.Toplevel):
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
 
-    def center(self):
-        self.update_idletasks()
-        parent_x, parent_y = (int(_) for _ in self.parent.geometry().split('+', 1)[1].split('+'))
-        parent_w, parent_h = (int(_) for _ in self.parent.geometry().split('+', 1)[0].split('x'))
-        w, h = (int(_) for _ in self.geometry().split('+')[0].split('x'))
-        x = parent_x + parent_w/2 - w/2
-        y = parent_y + parent_h/2 - h/2
-        self.geometry('+%d+%d' % (x, y))
+
 
 if __name__ == "__main__":
     mobile_client = Mobileclient()
@@ -693,6 +726,8 @@ if __name__ == "__main__":
         else:
             force_prompt = True
 
+    splash = Splash(None)
+    splash.update_idletasks()
     app = MainWindow(None, mobile_client)
     app.title('PyPlayMusic')
     app.mainloop()
