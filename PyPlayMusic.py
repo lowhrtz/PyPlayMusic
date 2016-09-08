@@ -27,7 +27,7 @@ if len(args) > 1:
 else:
     try:
         from player import Player
-    except:
+    except ImportError:
         from player_vlc import Player
 
 # Module constants
@@ -60,7 +60,8 @@ def convert_sample_to_milli(sample, rate):
     :return: the number of milliseconds equal to sample samples
     """
     #print "Convert Returns:", sample / float(size) * 500
-    return sample / rate * 500  # I would think this should be 1000 but that gives values twice as big as they should be. Strange...
+    # I would think this should be 1000 but that gives values twice as big as they should be. Strange...
+    return sample / rate * 500
 
 
 def convert_milli_to_sample(milli, rate):
@@ -116,7 +117,7 @@ class TrackList(list):
         """
         Moves pointer to specified index and returns track at that position.
         :param index: index of desired track
-        :return: track at new position
+        :return: track at new position or None if index is out of range.
         """
         try:
             self[index]
@@ -143,6 +144,7 @@ class MainWindow(Tkinter.Tk):
         Tkinter.Tk.__init__(self, parent)
         self.parent = parent
         self.mobile_client = mobile_client
+        self.default_image = ImageTk.PhotoImage(file=DEFAULT_IMAGE, master=self)
         self.player = Player()
         self.device_id = None
         self.library = None
@@ -160,8 +162,8 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         self.protocol('WM_DELETE_WINDOW', self.close_window)
-        icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
-        self.tk.call('wm', 'iconphoto', self._w, icon)
+        # icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
+        self.tk.call('wm', 'iconphoto', self._w, self.default_image)
         self.grid()
 
         # Set up widgets
@@ -172,7 +174,7 @@ class MainWindow(Tkinter.Tk):
         )
         self.search_choose.current(0)
         self.search_choose.bind("<<ComboboxSelected>>", self.on_search_choose_click)
-        self.entry_variable = Tkinter.StringVar(master=self)
+        self.entry_variable = Tkinter.StringVar(self)
         self.entry = Tkinter.Entry(self, textvariable=self.entry_variable)
         self.entry.bind("<Return>", self.on_press_enter)
         self.entry.bind("<KP_Enter>", self.on_press_enter)
@@ -180,7 +182,7 @@ class MainWindow(Tkinter.Tk):
         listbox_frame = Tkinter.Frame(self)
         listbox_scrollbar = Tkinter.Scrollbar(self)
         self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
-                                             font=tkFont.Font(root=self, family='Helvetica', size=12, weight='bold'),
+                                             font=tkFont.Font(self, family='Helvetica', size=12, weight='bold'),
                                              height=15, width=40)
         self.track_listbox.bind("<Double-Button-1>", self.select_track)
         self.track_listbox.bind("<Return>", self.select_track)
@@ -189,9 +191,8 @@ class MainWindow(Tkinter.Tk):
         self.playlists['values'] = self.get_playlists()
         self.playlists.current(0)
         self.playlists.bind("<<ComboboxSelected>>", self.on_playlists_click)
-        self.rand_list_var = Tkinter.IntVar(master=self)
+        self.rand_list_var = Tkinter.IntVar(self)
         randomize_list = Tkinter.Checkbutton(self, text="Shuffle Results", variable=self.rand_list_var)
-        self.default_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
         self.album_image = Tkinter.Label(self, image=self.default_image)
         self.album_image['image'] = self.default_image
         self.fileinfo = Tkinter.Label(self, anchor="w", justify=Tkinter.LEFT)
@@ -349,7 +350,12 @@ class MainWindow(Tkinter.Tk):
                                    if self.track_matches(track)])
         if len(search_tracks) == 0:
             global next_image
-            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            self.progress['value'] = 0
+            self.current_time['text'] = "0:00"
+            self.total_time['text'] = "0:00"
+            self.fill_track_listbox(search_tracks)
+            # next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            next_image = self.default_image
             self.album_image.configure(image = next_image)
             self.fileinfo['text'] = "Nothing matched your search!"
             return
@@ -465,7 +471,7 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         if self.track_listbox.data != tracks: return  # This removes any stale loops that result from new searches
-        if not self.player.is_playing()\
+        if not self.player.is_playing() \
                 and self.player_state == "play":
             print 'Problem with audio stream. Fixing...'
             self.enable_controls(False)
@@ -505,7 +511,8 @@ class MainWindow(Tkinter.Tk):
         elif metadata.has_key('artistArtRef'):
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
-            next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            # next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            next_image = self.default_image
         self.album_image.configure(image=next_image)
         if metadata.has_key('year'):
             year = str(metadata['year'])
@@ -529,7 +536,8 @@ class MainWindow(Tkinter.Tk):
             print("Error: " + str(e))
             print("Error retrieving song image.")
             print("URL: " + url)
-            return ImageTk.PhotoImage()
+            # return ImageTk.PhotoImage()
+            return self.default_image
         pil_image = Image.open(data_stream)
         return ImageTk.PhotoImage(pil_image, master=self)
 
@@ -668,12 +676,11 @@ class Splash(CenterableToplevel):
         self.master.withdraw()
         self.overrideredirect(True)
         self.geometry('400x200')
-        #self.config(bg='#fd8c00')
 
         inset = Tkinter.Frame(self, bg='#ed7c00', padx=10, pady=10)
         inset.pack(fill=Tkinter.BOTH, expand=1)
         message = Tkinter.Label(inset, text='PyPlayMusic is loading...',
-                                font=tkFont.Font(inset, family='Times', size=16, weight='bold'),
+                                font=tkFont.Font(inset, family='Times', size=23, weight='bold'),
                                 bg='#fd8c00')
         message.pack(fill=Tkinter.BOTH, expand=1)
 
