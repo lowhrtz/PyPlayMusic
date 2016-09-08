@@ -57,7 +57,7 @@ class AuthHandler(object):
     Class used as an interface for external programs/libraries. Particularly useful for testing cached authentication
     before opening the AuthWindow.
     """
-    def __init__(self, title, force_prompt=False):
+    def __init__(self, title, force_prompt=False, above_this=None):
         """
         AuthHandler __init__ function
         :param title: Desired title for AuthWindow
@@ -73,7 +73,7 @@ class AuthHandler(object):
             self.uname = cached.readline().rstrip()
             self.passwd = decrypt(cached.read())
         else:
-            auth_win = AuthWindow(None, title)
+            auth_win = AuthWindow(None, title, above_this)
             # auth_win.mainloop()
             # This used to be a call to auth_win.mainloop() but this caused issues when the splash was introduced
             import time
@@ -96,7 +96,7 @@ class AuthWindow(Tkinter.Tk):
     """
     Tk window for prompting for username and password.
     """
-    def __init__(self, parent, title):
+    def __init__(self, parent, title, above_this=None):
         """
         AuthWindow __init__ function.
         :param parent: Tk parent, OK to be None
@@ -109,6 +109,9 @@ class AuthWindow(Tkinter.Tk):
         self.protocol('WM_DELETE_WINDOW', self.on_cancel_click)
         self.canceled = True
         self.font = tkFont.Font(self, family='Helvetica', size=13)
+        self.above_this = above_this
+        if above_this:
+            above_this.withdraw()
         self.initialize()
 
     def initialize(self):
@@ -167,6 +170,8 @@ class AuthWindow(Tkinter.Tk):
         self.passwd = self.p_field_variable.get()
         cached = open(CACHE_FILE, 'w')
         cached.write(self.uname + '\n' + encrypt(self.passwd))
+        if self.above_this:
+            self.above_this.deiconify()
         self.destroy()
 
     def on_cancel_click(self):

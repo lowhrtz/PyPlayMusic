@@ -710,13 +710,14 @@ class ChooseDevice(CenterableToplevel):
         self.destroy()
 
 
-
 if __name__ == "__main__":
+    splash = Splash(None)
+    splash.update_idletasks()
     mobile_client = Mobileclient()
     authenticated = False
     force_prompt = False
     while not authenticated:
-        auth_handle = auth.AuthHandler("Google Auth", force_prompt)
+        auth_handle = auth.AuthHandler("Google Auth", force_prompt, splash)
         if auth_handle.canceled:
             exit(0)
         email = auth_handle.uname
@@ -726,8 +727,6 @@ if __name__ == "__main__":
         else:
             force_prompt = True
 
-    splash = Splash(None)
-    splash.update_idletasks()
     app = MainWindow(None, mobile_client)
     app.title('PyPlayMusic')
     app.mainloop()
