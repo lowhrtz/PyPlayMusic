@@ -113,7 +113,6 @@ class AuthWindow(Tkinter.Tk):
         self.above_this = above_this
         if above_this:
             above_this.withdraw()
-        self.initialize()
 
         # Initialize gui widgets.
         self.grid()
