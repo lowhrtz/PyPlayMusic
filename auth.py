@@ -31,8 +31,7 @@ def encrypt(passwd):
     bs = Blowfish.block_size
     iv = Random.new().read(bs)
     cipher = Blowfish.new(KEY, Blowfish.MODE_CBC, iv)
-    #plen = bs - divmod(len(passwd),bs)[1]
-    plen = bs - len(passwd)%bs
+    plen = bs - len(passwd) % bs
     padding = [plen]*plen
     padding = pack('b'*plen, *padding)
     return iv + cipher.encrypt(passwd + padding)
@@ -67,7 +66,6 @@ class AuthHandler(object):
         self.uname = None
         self.passwd = None
         self.canceled = False
-        #self.title = title
         cached = open_cached()
         if cached and not force_prompt:
             self.uname = cached.readline().rstrip()
@@ -78,7 +76,8 @@ class AuthHandler(object):
             # This used to be a call to auth_win.mainloop() but this caused issues when the splash was introduced
             import time
             while True:
-                time.sleep(.1) # This causes it to loop at the same(or at least comparable) rate as mainloop
+                # This causes it to loop at the same(or at least comparable) rate as mainloop
+                time.sleep(.1)
                 try:
                     auth_win.update_idletasks()
                     auth_win.update()
@@ -107,6 +106,8 @@ class AuthWindow(Tkinter.Tk):
         self.parent = parent
         self.title(title)
         self.protocol('WM_DELETE_WINDOW', self.on_cancel_click)
+        self.uname = None
+        self.passwd = None
         self.canceled = True
         self.font = tkFont.Font(self, family='Helvetica', size=13)
         self.above_this = above_this
@@ -114,11 +115,7 @@ class AuthWindow(Tkinter.Tk):
             above_this.withdraw()
         self.initialize()
 
-    def initialize(self):
-        """
-        Initializes gui widgets.
-        :return: None
-        """
+        # Initialize gui widgets.
         self.grid()
 
         self.u_field_variable = Tkinter.StringVar(self)

@@ -151,18 +151,9 @@ class MainWindow(Tkinter.Tk):
 
         self.channel = None
 
-        self.initialize()
-        self.center()
-        splash.master.destroy()
-        ChooseDevice(self, mobile_client)
-
-    def initialize(self):
-        """
-        Initializes the gui widgets. Should only be called from the __init__function.
-        :return: None
-        """
+        # Initialize the GUI
         self.protocol('WM_DELETE_WINDOW', self.close_window)
-        # icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
+        #icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
         self.tk.call('wm', 'iconphoto', self._w, self.default_image)
         self.grid()
 
@@ -184,6 +175,7 @@ class MainWindow(Tkinter.Tk):
         self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
                                              font=tkFont.Font(self, family='Helvetica', size=12, weight='bold'),
                                              height=15, width=40)
+        self.track_listbox.data = None
         self.track_listbox.bind("<Double-Button-1>", self.select_track)
         self.track_listbox.bind("<Return>", self.select_track)
         listbox_scrollbar.config(command=self.track_listbox.yview)
@@ -256,6 +248,11 @@ class MainWindow(Tkinter.Tk):
 
         self.fileinfo.bind("<Key>", key)
 
+        # Final Commands
+        self.center()
+        splash.master.destroy()
+        ChooseDevice(self, mobile_client)
+
     def center(self):
         """
         Centers the window.
@@ -311,7 +308,7 @@ class MainWindow(Tkinter.Tk):
         self.player.stop()
         playlist_index = self.playlists.current()
         playlist_dict = self.playlists.data[playlist_index]
-        playlist_id = playlist_dict['id']
+        #playlist_id = playlist_dict['id']
         playlist_tracks = self.get_playlist_tracks(playlist_dict['tracks'])
         if self.rand_list_var.get():
             random.shuffle(playlist_tracks)
@@ -354,9 +351,9 @@ class MainWindow(Tkinter.Tk):
             self.current_time['text'] = "0:00"
             self.total_time['text'] = "0:00"
             self.fill_track_listbox(search_tracks)
-            # next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            #next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
             next_image = self.default_image
-            self.album_image.configure(image = next_image)
+            self.album_image.configure(image=next_image)
             self.fileinfo['text'] = "Nothing matched your search!"
             return
 
@@ -434,6 +431,7 @@ class MainWindow(Tkinter.Tk):
         Plays the given track.
         :param track: track to be played
         :param tracks: TrackList
+        :param position: Position in ms, if not to be played from the beginning
         :return: None
         """
         self.remove_all_focus()
@@ -451,8 +449,9 @@ class MainWindow(Tkinter.Tk):
                 self.player.set_position(position)
                 self.progress['value'] = position
                 self.current_time['text'] = convert_milli_to_std(position)
+                print 'Done'
         except Exception, e:
-            print("Error: " + str(e))
+            print("Error: " + e.message)
             print("Error retrieving track: " + track['title'])
             self.play_track(tracks.next(), tracks)
             return
@@ -506,15 +505,15 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         global next_image
-        if metadata.has_key('albumArtRef'):
+        if 'albumArtRef' in metadata:
             next_image = self.get_photo_image_from_url(metadata['albumArtRef'][0]['url'])
-        elif metadata.has_key('artistArtRef'):
+        elif 'artistArtRef' in metadata:
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
-            # next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
+            #next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
             next_image = self.default_image
         self.album_image.configure(image=next_image)
-        if metadata.has_key('year'):
+        if 'year' in metadata:
             year = str(metadata['year'])
         else:
             year = 'Unknown'
@@ -607,11 +606,10 @@ class MainWindow(Tkinter.Tk):
         self.fileinfo.focus()
         seek_ratio = event.x / float(self.progress.winfo_width())
         seek_milli = seek_ratio * self.progress['maximum']
-        if not self.player.set_position(seek_milli):
-            self.player.stop()
-            return
         self.progress['value'] = int(seek_milli)
         self.current_time['text'] = convert_milli_to_std(int(seek_milli))
+        if not self.player.set_position(seek_milli):
+            self.player.stop()
 
     def seek_relative(self, direction, seconds):
         if direction == 0: direction = 1
@@ -625,11 +623,10 @@ class MainWindow(Tkinter.Tk):
         elif new_pos >= duration:
             self.progress['value'] = self.progress['maximum']
             return
-        if not self.player.set_position(new_pos):
-            self.player.stop()
-            return
         self.progress['value'] = new_pos
         self.current_time['text'] = convert_milli_to_std(new_pos)
+        if not self.player.set_position(new_pos):
+            self.player.stop()
 
     def seek_forward(self, seconds):
         self.seek_relative(1, seconds)
@@ -645,7 +642,7 @@ class MainWindow(Tkinter.Tk):
         """
         id_list = [item['trackId'] for item in playlist_dict_tracks]
         playlist_tracks = [track for track in self.library if track['id'] in id_list]
-        playlist_tracks.sort(key = lambda track: id_list.index(track['id']))
+        playlist_tracks.sort(key=lambda track: id_list.index(track['id']))
         return TrackList(playlist_tracks)
 
 
