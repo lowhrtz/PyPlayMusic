@@ -692,6 +692,8 @@ class ChooseDevice(CenterableToplevel):
         CenterableToplevel.__init__(self, parent)
         self.parent = parent
         self.wm_title('Choose Device')
+        self.attributes("-topmost", True)
+        self.protocol('WM_DELETE_WINDOW', lambda x=1: x)
 
         self.text_label = Tkinter.Label(self, text='Choose a mobile device ID.')
         self.text_label.pack()
@@ -705,14 +707,20 @@ class ChooseDevice(CenterableToplevel):
         self.device_chooser = ttk.Combobox(self, textvariable=self.device_chooser_var, values=dev_list)
         self.device_chooser.bind('<<ComboboxSelected>>', self.device_chosen)
 
+        self.bind("<FocusOut>", self.regain_focus)
+
         self.device_chooser.pack()
         self.center()
+        self.regain_focus()
 
     def device_chosen(self, e):
         device_choice = self.device_chooser.get()
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
 
+    def regain_focus(self, e=None):
+        self.grab_set()
+        self.focus()
 
 if __name__ == "__main__":
     splash = Splash(None)

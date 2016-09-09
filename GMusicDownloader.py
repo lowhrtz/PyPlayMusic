@@ -29,27 +29,13 @@ class MainWindow(Tkinter.Tk):
         self.mobile_client = mobile_client
         self.device_id = None
         self.library = self.mobile_client.get_all_songs()
-        self.initialize()
-        #self.fill_listbox([track for track in self.library if track['artist'] == 'Beck' ])
-        #self.fill_listbox(self.library)
-        self.fill_tree(self.library)
-        self.center()
-        self.device_chooser = ChooseDevice(self, mobile_client)
 
-    def initialize(self):
-        """
-        Initializes the gui widgets. Should only be called from the __init__function.
-        :return: None
-        """
-        #self.protocol('WM_DELETE_WINDOW', self.close_window)
+        # Initializes the gui widgets. Should only be called from the __init__function.
         self.grid()
 
         # Set up widgets
         tracklist_frame = Tkinter.Frame(self)
         tracklist_scrollbar = Tkinter.Scrollbar(self)
-        #self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
-        #                                     font=tkFont.Font(family='Helvetica', size=12, weight='bold'),
-        #                                     height=20, width=80)
         self.tree = tree = ttk.Treeview(self, height=30, yscrollcommand=tracklist_scrollbar.set)
         tree.column("#0", width=750)
         tracklist_scrollbar.config(command=tree.yview)
@@ -61,9 +47,9 @@ class MainWindow(Tkinter.Tk):
         tracklist_scrollbar.grid(in_=tracklist_frame, column=1, row=0, sticky='NS')
         download_button.grid(column=0, row=1, sticky='EW')
 
-        #tree.insert('', 'end', 'artist', text='Punky Joe')
-        #tree.insert('artist', 'end', 'album', text='Anarchy in Hoboken')
-        #tree.insert('album', 'end', text='Kindly Fuck Off!!', values=('1:00',))
+        self.fill_tree(self.library)
+        self.center()
+        self.device_chooser = ChooseDevice(self, mobile_client)
 
     def center(self):
         """
@@ -112,29 +98,6 @@ class MainWindow(Tkinter.Tk):
                 pass
             self.tree.insert(albumLabel + artistLabel, 'end', track['title'] + track['id'], text=track['title'], values=(json.dumps(track),))
 
-#    def fill_listbox(self, tracks):
-#        """
-#        Fills the listbox with tracks using a list of tracks
-#        :param tracks: list of track dicts
-#        :return: None
-#        """
-#        tracks.sort(key=lambda track: track['trackNumber'])
-#        tracks.sort(key=lambda track: track['album'])
-#        tracks.sort(key=lambda track: track['artist'])
-#        self.track_listbox.delete(0, Tkinter.END)
-#        for track in tracks:
-#            self.track_listbox.insert(Tkinter.END, self.track_listbox_template(track))
-#
-#        self.track_listbox.data = tracks
-
-#    def track_listbox_template(self, track):
-#        """
-#        Formats template for items in the track listbox.
-#        :param track: track dict
-#        :return: string in the format: "title" by "artist" on "album"
-#        """
-#        return track['title'] + " by " + track['artist'] + " on " + track['album']
-
     def filename_template(self, track):
         """
         Formats template for naming a downloaded file
@@ -160,7 +123,7 @@ class MainWindow(Tkinter.Tk):
         structure and download tracks based on what is selected in the tree.
         :return: None
         """
-        if self.device_id == None:
+        if self.device_id is None:
             ChooseDevice(self, self.mobile_client)
             print(self.device_id)
             return
@@ -311,6 +274,7 @@ class ProgressWindow(Tkinter.Toplevel):
         self.message.config(text=message_text)
         self.update_idletasks()
 
+
 class ChooseDevice(Tkinter.Toplevel):
     """
 
@@ -318,6 +282,9 @@ class ChooseDevice(Tkinter.Toplevel):
     def __init__(self, parent, mobile_client):
         Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
+        self.wm_title('Choose Device')
+        self.attributes("-topmost", True)
+        self.protocol('WM_DELETE_WINDOW', lambda x=1: x)
 
         self.text_label = Tkinter.Label(self, text='Choose a mobile device ID.')
         self.text_label.pack()
@@ -331,15 +298,17 @@ class ChooseDevice(Tkinter.Toplevel):
         self.device_chooser = ttk.Combobox(self, textvariable=self.device_chooser_var, values=dev_list)
         self.device_chooser.bind('<<ComboboxSelected>>', self.device_chosen)
 
+        self.bind("<FocusOut>", self.regain_focus)
+
         self.device_chooser.pack()
         self.center()
+        self.regain_focus()
 
     def device_chosen(self, e):
         device_choice = self.device_chooser.get()
         #print(device_choice)
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
-        
 
     def center(self):
         self.update_idletasks()
@@ -349,6 +318,10 @@ class ChooseDevice(Tkinter.Toplevel):
         x = parent_x + parent_w/2 - w/2
         y = parent_y + parent_h/2 - h/2
         self.geometry('+%d+%d' % (x, y))
+
+    def regain_focus(self, e=None):
+        self.grab_set()
+        self.focus()
 
 if __name__ == "__main__":
     #mobile_client = Mobileclient(debug_logging=True)
