@@ -55,19 +55,18 @@ class Player(object):
         while not success:
             success, dur = self.playbin.query_duration(Gst.Format.TIME)
             i += 1
-            if i > 1000: return 0
+            if i > 1000:
+                return 0
         return dur / 1000000
 
     def get_position(self):
         success = False
         i = 0
-        #while not success:
-        #    success, pos = self.element.query_position(Gst.Format.TIME)
-        #    i += 1
-        #    print(i, success, pos)
-        #    if i > 1000: return 0
-        success, pos = self.playbin.query_position(Gst.Format.TIME)
-        print(success, pos)
+        while not success:
+            success, pos = self.element.query_position(Gst.Format.TIME)
+            i += 1
+            if i > 1000:
+                return 0
         return pos / 1000000
 
     def set_position(self, position):

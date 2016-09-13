@@ -59,7 +59,6 @@ def convert_sample_to_milli(sample, rate):
     :param rate: sample rate
     :return: the number of milliseconds equal to sample samples
     """
-    #print "Convert Returns:", sample / float(size) * 500
     # I would think this should be 1000 but that gives values twice as big as they should be. Strange...
     return sample / rate * 500
 
@@ -181,13 +180,15 @@ class MainWindow(Tkinter.Tk):
         self.album_image['image'] = self.default_image
         self.fileinfo = Tkinter.Label(self, anchor="w", justify=Tkinter.LEFT)
         self.controls_frame = Tkinter.Frame(self)
-        self.pause_button = Tkinter.Button(self.controls_frame, text="Pause", state="disabled", command=self.pause_track)
+        self.pause_button = Tkinter.Button(self.controls_frame, text="Pause",
+                                           state="disabled", command=self.pause_track)
         self.current_time = Tkinter.Label(self.controls_frame, anchor="w")
         self.progress = ttk.Progressbar(self.controls_frame, orient="horizontal",
                                         length=200, mode="determinate")
         self.progress.bind("<Button-1>", self.on_track_seek)
         self.total_time = Tkinter.Label(self.controls_frame)
-        self.next_button = Tkinter.Button(self.controls_frame, text="Next Track", state="disabled", command=self.on_next_track)
+        self.next_button = Tkinter.Button(self.controls_frame, text="Next Track",
+                                          state="disabled", command=self.on_next_track)
 
         # place widgets on grid
         search_frame.grid(column=0, columnspan=2, row=0, sticky='N')
@@ -487,6 +488,11 @@ class MainWindow(Tkinter.Tk):
             print("Error retrieving track: " + track['title'])
             self.play_track(tracks.next(), tracks)
             return
+        max_millis = self.player.get_duration()
+        if max_millis \
+                and max_millis > 0:
+            self.progress['maximum'] = max_millis
+            self.total_time['text'] = convert_milli_to_std(max_millis)
         self.player_state = "play"
         self.pause_state = "unpaused"
         self.enable_controls(True)
@@ -526,10 +532,10 @@ class MainWindow(Tkinter.Tk):
         """
         if self.pause_state == "unpaused":
             self.progress['value'] += LOOP_INTERVAL
-        pos = self.progress['value']
-        self.current_time['text'] = convert_milli_to_std(pos)
-        if self.progress['value'] >= self.progress['maximum']:
-            self.player_state = "next"
+            pos = self.progress['value']
+            self.current_time['text'] = convert_milli_to_std(pos)
+            if self.progress['value'] >= self.progress['maximum']:
+                self.player_state = "next"
 
     def change_fileinfo(self, metadata):
         """
@@ -643,7 +649,8 @@ class MainWindow(Tkinter.Tk):
             self.player.stop()
 
     def seek_relative(self, direction, seconds):
-        if direction == 0: direction = 1
+        if direction == 0:
+            direction = 1
         direction_sign = direction/abs(direction)
         current_pos = self.progress['value']
         duration = self.progress['maximum']
@@ -741,13 +748,13 @@ class ChooseDevice(CenterableToplevel):
         self.center()
         self.regain_focus(None)
 
-    def device_chosen(self, e):
+    def device_chosen(self, event):
         device_choice_index = self.device_chooser.current()
         device_choice = self.device_chooser['values'][device_choice_index]
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
 
-    def regain_focus(self, e):
+    def regain_focus(self, event):
         self.attributes("-topmost", True)
         self.grab_set()
         self.device_chooser.focus()
