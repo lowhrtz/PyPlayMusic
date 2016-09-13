@@ -134,87 +134,79 @@ class MainWindow(Tkinter.Tk):
     """
     Main GUI window for the application.
     """
-    def __init__(self, parent, mobile_client):
+    def __init__(self):
         """
         MainWindow __init__ function
-        :param parent: Tk parent. Fine to be None.
-        :param mobile_client: gmusicapi Mobileclient is expected
         :return: None
         """
-        Tkinter.Tk.__init__(self, parent)
-        self.parent = parent
-        self.mobile_client = mobile_client
+        Tkinter.Tk.__init__(self)
         self.default_image = ImageTk.PhotoImage(file=DEFAULT_IMAGE, master=self)
         self.player = Player()
+        self.listbox_tracks = None
+        self.playlists = None
+        self.stations = None
         self.device_id = None
         self.library = None
 
-        self.channel = None
-
         # Initialize the GUI
         self.protocol('WM_DELETE_WINDOW', self.close_window)
-        #icon = ImageTk.PhotoImage(master=self, file=DEFAULT_IMAGE)
         self.tk.call('wm', 'iconphoto', self._w, self.default_image)
         self.grid()
 
         # Set up widgets
         search_frame = Tkinter.Frame(self)
-        self.search_choose = ttk.Combobox(self, state='readonly')
+        self.search_choose = ttk.Combobox(search_frame, state='readonly')
         self.search_choose['values'] = (
-            "Search by Artist", "Search by Genre", "Search by Album", "Search by Title", "Playlists"
+            "Search by Artist", "Search by Genre", "Search by Album", "Search by Title", "Playlists", "Stations"
         )
         self.search_choose.current(0)
         self.search_choose.bind("<<ComboboxSelected>>", self.on_search_choose_click)
-        self.entry_variable = Tkinter.StringVar(self)
-        self.entry = Tkinter.Entry(self, textvariable=self.entry_variable)
+        self.entry_variable = Tkinter.StringVar(search_frame)
+        self.entry = Tkinter.Entry(search_frame, textvariable=self.entry_variable)
         self.entry.bind("<Return>", self.on_press_enter)
         self.entry.bind("<KP_Enter>", self.on_press_enter)
-        self.search_button = Tkinter.Button(self, text=u"Search", command=self.on_search_click)
+        self.search_button = Tkinter.Button(search_frame, text=u"Search", command=self.on_search_click)
         listbox_frame = Tkinter.Frame(self)
-        listbox_scrollbar = Tkinter.Scrollbar(self)
-        self.track_listbox = Tkinter.Listbox(self, yscrollcommand=listbox_scrollbar.set,
+        listbox_scrollbar = Tkinter.Scrollbar(listbox_frame)
+        self.track_listbox = Tkinter.Listbox(listbox_frame, yscrollcommand=listbox_scrollbar.set,
                                              font=tkFont.Font(self, family='Helvetica', size=12, weight='bold'),
                                              height=15, width=40)
-        self.track_listbox.data = None
         self.track_listbox.bind("<Double-Button-1>", self.select_track)
         self.track_listbox.bind("<Return>", self.select_track)
         listbox_scrollbar.config(command=self.track_listbox.yview)
-        self.playlists = ttk.Combobox(self, state='disabled')
-        self.playlists['values'] = self.get_playlists()
-        self.playlists.current(0)
-        self.playlists.bind("<<ComboboxSelected>>", self.on_playlists_click)
-        self.rand_list_var = Tkinter.IntVar(self)
-        randomize_list = Tkinter.Checkbutton(self, text="Shuffle Results", variable=self.rand_list_var)
+        self.second_combobox = ttk.Combobox(search_frame, state='disabled')
+        self.rand_list_var = Tkinter.IntVar(search_frame)
+        self.randomize_list = Tkinter.Checkbutton(search_frame, text="Shuffle Results", variable=self.rand_list_var)
         self.album_image = Tkinter.Label(self, image=self.default_image)
         self.album_image['image'] = self.default_image
         self.fileinfo = Tkinter.Label(self, anchor="w", justify=Tkinter.LEFT)
         self.controls_frame = Tkinter.Frame(self)
-        self.pause_button = Tkinter.Button(self, text="Pause", state="disabled", command=self.pause_track)
-        self.current_time = Tkinter.Label(self, anchor="w")
-        self.progress = ttk.Progressbar(self, orient="horizontal",
+        self.pause_button = Tkinter.Button(self.controls_frame, text="Pause", state="disabled", command=self.pause_track)
+        self.current_time = Tkinter.Label(self.controls_frame, anchor="w")
+        self.progress = ttk.Progressbar(self.controls_frame, orient="horizontal",
                                         length=200, mode="determinate")
         self.progress.bind("<Button-1>", self.on_track_seek)
-        self.total_time = Tkinter.Label(self)
-        self.next_button = Tkinter.Button(self, text="Next Track", state="disabled", command=self.on_next_track)
+        self.total_time = Tkinter.Label(self.controls_frame)
+        self.next_button = Tkinter.Button(self.controls_frame, text="Next Track", state="disabled", command=self.on_next_track)
 
         # place widgets on grid
         search_frame.grid(column=0, columnspan=2, row=0, sticky='N')
-        self.search_choose.grid(in_=search_frame, column=0, row=0, sticky='EW')
-        self.entry.grid(in_=search_frame, column=1, row=0, sticky='EW')
-        self.search_button.grid(in_=search_frame, column=2, row=0)
-        self.playlists.grid(in_=search_frame, column=0, row=1, sticky='N')
-        randomize_list.grid(in_=search_frame, column=1, row=1)
+        self.search_choose.grid(column=0, row=0, sticky='EW')
+        self.entry.grid(column=1, row=0, sticky='EW')
+        self.search_button.grid(column=2, row=0)
+        self.second_combobox.grid(column=0, row=1, sticky='N')
+        self.randomize_list.grid(column=1, row=1)
         listbox_frame.grid(column=2, row=0, rowspan=2, sticky='NS')
-        self.track_listbox.grid(in_=listbox_frame, column=0, row=0, sticky='NS')
-        listbox_scrollbar.grid(in_=listbox_frame, column=1, row=0, sticky='NS')
+        self.track_listbox.grid(column=0, row=0, sticky='NS')
+        listbox_scrollbar.grid(column=1, row=0, sticky='NS')
         self.album_image.grid(column=0, row=1)
         self.fileinfo.grid(column=1, columnspan=1, row=1)
         self.controls_frame.grid(column=0, columnspan=3, row=2)
-        self.pause_button.grid(in_=self.controls_frame, column=0, row=0)
-        self.current_time.grid(in_=self.controls_frame, column=1, row=0)
-        self.progress.grid(in_=self.controls_frame, column=2, row=0)
-        self.total_time.grid(in_=self.controls_frame, column=3, row=0)
-        self.next_button.grid(in_=self.controls_frame, column=4, row=0)
+        self.pause_button.grid(column=0, row=0)
+        self.current_time.grid(column=1, row=0)
+        self.progress.grid(column=2, row=0)
+        self.total_time.grid(column=3, row=0)
+        self.next_button.grid(column=4, row=0)
 
         # Final initializations
         self.player_state = "play"
@@ -222,7 +214,7 @@ class MainWindow(Tkinter.Tk):
 
         self.entry.focus_set()
 
-        self.library = self.mobile_client.get_all_songs()
+        self.library = mobile_client.get_all_songs()
 
         def key(e):
             keysym = e.keysym_num
@@ -251,7 +243,7 @@ class MainWindow(Tkinter.Tk):
         # Final Commands
         self.center()
         splash.master.destroy()
-        ChooseDevice(self, mobile_client)
+        ChooseDevice(self)
 
     def center(self):
         """
@@ -291,39 +283,69 @@ class MainWindow(Tkinter.Tk):
         current_search_index = self.search_choose.current()
         current_search = self.search_choose['values'][current_search_index]
         if current_search == "Playlists":
-            self.playlists['state'] = "readonly"
+            self.second_combobox['state'] = "readonly"
             self.entry['state'] = "disabled"
             self.search_button['state'] = "disabled"
+            self.randomize_list['state'] = "normal"
+            self.playlist_option_chosen()
+        elif current_search == "Stations":
+            self.second_combobox['state'] = "readonly"
+            self.entry['state'] = "disabled"
+            self.search_button['state'] = "disabled"
+            self.randomize_list['state'] = "disabled"
+            self.station_option_chosen()
         else:
-            self.playlists['state'] = "disabled"
+            self.second_combobox['state'] = "disabled"
             self.entry['state'] = "normal"
             self.search_button['state'] = "normal"
+            self.randomize_list['state'] = "normal"
 
     def on_playlists_click(self, event):
         """
-        Callback function called when playlist dropdown is selected.
-        :param event: Tk event
-        :return: None
-        """
+            Callback function called when playlist dropdown is selected.
+            :param event: Tk event
+            :return: None
+            """
         self.player.stop()
-        playlist_index = self.playlists.current()
-        playlist_dict = self.playlists.data[playlist_index]
-        #playlist_id = playlist_dict['id']
+        playlist_index = self.second_combobox.current()
+        playlist_dict = self.playlists[playlist_index]
         playlist_tracks = self.get_playlist_tracks(playlist_dict['tracks'])
         if self.rand_list_var.get():
             random.shuffle(playlist_tracks)
         self.play(playlist_tracks)
+
+    def playlist_option_chosen(self):
+        self.second_combobox['values'] = self.get_playlists()
+        self.second_combobox.current(0)
+        self.second_combobox.bind("<<ComboboxSelected>>", self.on_playlists_click)
+
+    def station_option_chosen(self):
+        self.stations = mobile_client.get_all_stations()
+        stations_list = []
+        for station in self.stations:
+            stations_list.append(station['name'])
+        self.second_combobox['values'] = stations_list
+        self.second_combobox.current(0)
+        self.second_combobox.bind("<<ComboboxSelected>>", self.on_stations_choose_click)
+
+    def on_stations_choose_click(self, event):
+        self.player.stop()
+        choice_index = self.second_combobox.current()
+        station_dict = self.stations[choice_index]
+        station_id = station_dict['id']
+        station_tracks = mobile_client.get_station_tracks(station_id, num_tracks=200)
+        self.play(TrackList(station_tracks))
 
     def get_playlists(self):
         """
         Gets all playlists on the Google Play account
         :return: a list of playlist dictionaries
         """
-        self.playlists.data = []
+        self.playlists = []
         name_list = []
-        for datum in self.mobile_client.get_all_user_playlist_contents():
+        for datum in mobile_client.get_all_user_playlist_contents():
             if datum['name'] != '':
-                self.playlists.data.append(datum)
+                self.playlists.append(datum)
                 name_list.append(datum['name'])
         return name_list
 
@@ -351,7 +373,6 @@ class MainWindow(Tkinter.Tk):
             self.current_time['text'] = "0:00"
             self.total_time['text'] = "0:00"
             self.fill_track_listbox(search_tracks)
-            #next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
             next_image = self.default_image
             self.album_image.configure(image=next_image)
             self.fileinfo['text'] = "Nothing matched your search!"
@@ -421,6 +442,8 @@ class MainWindow(Tkinter.Tk):
         :return: None
         """
         self.fill_track_listbox(tracks)
+        if len(tracks) == 0:
+            return
         track = tracks.current()
         self.change_fileinfo(track)
         self.play_track(track, tracks)
@@ -440,8 +463,17 @@ class MainWindow(Tkinter.Tk):
         self.total_time['text'] = convert_milli_to_std(track['durationMillis'])
         self.update_listbox(tracks)
         self.update_idletasks()
+        if 'id' in track:
+            track_id = track['id']
+        elif 'storeId' in track:
+            track_id = track['storeId']
+        else:
+            print 'Problem with track info...'
+            print track
+            self.play_track(tracks.next(), tracks)
+            return
         try:
-            stream_audio_url = self.mobile_client.get_stream_url(track['id'], self.device_id)
+            stream_audio_url = mobile_client.get_stream_url(track_id, self.device_id)
             self.player.load_url(stream_audio_url)
             self.player.play()
             if position:
@@ -451,7 +483,7 @@ class MainWindow(Tkinter.Tk):
                 self.current_time['text'] = convert_milli_to_std(position)
                 print 'Done'
         except Exception, e:
-            print("Error: " + e.message)
+            print("Error: " + str(e))
             print("Error retrieving track: " + track['title'])
             self.play_track(tracks.next(), tracks)
             return
@@ -469,7 +501,8 @@ class MainWindow(Tkinter.Tk):
         :param tracks: TrackList
         :return: None
         """
-        if self.track_listbox.data != tracks: return  # This removes any stale loops that result from new searches
+        if self.listbox_tracks != tracks:
+            return  # This removes any stale loops that result from new searches
         if not self.player.is_playing() \
                 and self.player_state == "play":
             print 'Problem with audio stream. Fixing...'
@@ -510,7 +543,6 @@ class MainWindow(Tkinter.Tk):
         elif 'artistArtRef' in metadata:
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
-            #next_image = ImageTk.PhotoImage(Image.open(DEFAULT_IMAGE), master=self)
             next_image = self.default_image
         self.album_image.configure(image=next_image)
         if 'year' in metadata:
@@ -535,7 +567,6 @@ class MainWindow(Tkinter.Tk):
             print("Error: " + str(e))
             print("Error retrieving song image.")
             print("URL: " + url)
-            # return ImageTk.PhotoImage()
             return self.default_image
         pil_image = Image.open(data_stream)
         return ImageTk.PhotoImage(pil_image, master=self)
@@ -563,7 +594,7 @@ class MainWindow(Tkinter.Tk):
         for track in tracks:
             self.track_listbox.insert(Tkinter.END, self.track_listbox_template(track))
 
-        self.track_listbox.data = tracks
+        self.listbox_tracks = tracks
 
     def track_listbox_template(self, track):
         """
@@ -584,7 +615,7 @@ class MainWindow(Tkinter.Tk):
         self.player_state = "seek"
         self.player.stop()
         curselection = self.track_listbox.curselection()[0]
-        tracks = self.track_listbox.data
+        tracks = self.listbox_tracks
         self.play_track(tracks.at(int(curselection)), tracks)
 
     def update_listbox(self, tracks):
@@ -687,7 +718,7 @@ class ChooseDevice(CenterableToplevel):
     """
 
     """
-    def __init__(self, parent, mobile_client):
+    def __init__(self, parent):
         CenterableToplevel.__init__(self, parent)
         self.parent = parent
         self.wm_title('Choose Device')
@@ -739,6 +770,6 @@ if __name__ == "__main__":
         else:
             force_prompt = True
 
-    app = MainWindow(None, mobile_client)
+    app = MainWindow()
     app.title('PyPlayMusic')
     app.mainloop()
