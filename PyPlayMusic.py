@@ -489,8 +489,7 @@ class MainWindow(Tkinter.Tk):
             self.play_track(tracks.next(), tracks)
             return
         max_millis = self.player.get_duration()
-        if max_millis \
-                and max_millis > 0:
+        if max_millis > 0:
             self.progress['maximum'] = max_millis
             self.total_time['text'] = convert_milli_to_std(max_millis)
         self.player_state = "play"
@@ -555,7 +554,8 @@ class MainWindow(Tkinter.Tk):
             year = str(metadata['year'])
         else:
             year = 'Unknown'
-        self.fileinfo['text'] = "Title: " + metadata['title'] + "\nArtist: " + metadata['artist'] + "\nAlbum: " + metadata['album'] + "\nGenre: " + metadata['genre'] + "\nYear: " + year
+        self.fileinfo['text'] = "Title: " + metadata['title'] + "\nArtist: " + metadata['artist']\
+                                + "\nAlbum: " + metadata['album'] + "\nGenre: " + metadata['genre'] + "\nYear: " + year
         self.progress['value'] = 0
         self.current_time['text'] = "0:00"
         self.total_time['text'] = "0:00"
@@ -633,6 +633,7 @@ class MainWindow(Tkinter.Tk):
         self.track_listbox.select_clear(0, Tkinter.END)
         self.track_listbox.select_set(tracks.pos)
         self.track_listbox.activate(tracks.pos)
+        self.track_listbox.see(tracks.pos)
 
     def on_track_seek(self, event):
         """
