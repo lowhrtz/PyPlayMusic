@@ -12,6 +12,8 @@ from urllib2 import urlopen
 from gmusicapi import Mobileclient
 
 import auth
+import GMusicDownloader
+import shared
 args = sys.argv
 if len(args) > 1:
     backend = args[1]
@@ -73,6 +75,15 @@ def convert_milli_to_sample(milli, rate):
     return milli / float(500) * rate
 
 
+def track_listbox_template(track):
+    """
+    Format template for items in the track listbox.
+    :param track: track from TrackList
+    :return: string in the format: "title" by "artist"
+    """
+    return track['title'] + " by " + track['artist']
+
+
 class TrackList(list):
     """
     TrackList is a list of tracks that keeps track of the current position.
@@ -129,7 +140,7 @@ class TrackList(list):
         return self[self.pos]
 
 
-class MainWindow(Tkinter.Tk):
+class MainWindow(shared.Centerable, Tkinter.Tk):
     """
     Main GUI window for the application.
     """
@@ -140,6 +151,7 @@ class MainWindow(Tkinter.Tk):
         """
         Tkinter.Tk.__init__(self)
         self.default_image = ImageTk.PhotoImage(file=DEFAULT_IMAGE, master=self)
+        self.parent = None
         self.player = Player()
         self.listbox_tracks = None
         self.playlists = None
@@ -217,8 +229,9 @@ class MainWindow(Tkinter.Tk):
 
         self.library = mobile_client.get_all_songs()
 
-        def key(e):
-            keysym = e.keysym_num
+        def key(event):
+            keysym = event.keysym_num
+            # print keysym
             lower_n = 110
             upper_n = 78
             space = 32
@@ -240,24 +253,25 @@ class MainWindow(Tkinter.Tk):
                 self.seek_reverse(30)
 
         self.fileinfo.bind("<Key>", key)
+        self.fileinfo.bind("<Control-d>", lambda x: self.on_track_download(self.listbox_tracks.current()))
 
         # Final Commands
         self.center()
         splash.master.destroy()
-        ChooseDevice(self)
+        shared.ChooseDevice(self, mobile_client)
 
-    def center(self):
-        """
-        Centers the window.
-        :return: None
-        """
-        self.update_idletasks()
-        w = self.winfo_screenwidth()
-        h = self.winfo_screenheight()
-        size = tuple(int(_) for _ in self.geometry().split('+')[0].split('x'))
-        x = w/2 - size[0]/2
-        y = h/2 - size[1]/2
-        self.geometry("+%d+%d" % (x, y))
+    # def center(self):
+    #     """
+    #     Centers the window.
+    #     :return: None
+    #     """
+    #     self.update_idletasks()
+    #     w = self.winfo_screenwidth()
+    #     h = self.winfo_screenheight()
+    #     size = tuple(int(_) for _ in self.geometry().split('+')[0].split('x'))
+    #     x = w/2 - size[0]/2
+    #     y = h/2 - size[1]/2
+    #     self.geometry("+%d+%d" % (x, y))
 
     def close_window(self):
         """
@@ -322,6 +336,7 @@ class MainWindow(Tkinter.Tk):
 
     def station_option_chosen(self):
         self.stations = mobile_client.get_all_stations()
+        self.stations.reverse()
         stations_list = []
         for station in self.stations:
             stations_list.append(station['name'])
@@ -382,11 +397,11 @@ class MainWindow(Tkinter.Tk):
         if self.rand_list_var.get():
             random.shuffle(search_tracks)
         else:
-            search_tracks.sort(key=lambda track: track['title'])
-            search_tracks.sort(key=lambda track: track['trackNumber'])
-            search_tracks.sort(key=lambda track: track['discNumber'])
-            search_tracks.sort(key=lambda track: track['album'])
-            search_tracks.sort(key=lambda track: track['artist'])
+            search_tracks.sort(key=lambda trk: trk['title'])
+            search_tracks.sort(key=lambda trk: trk['trackNumber'])
+            search_tracks.sort(key=lambda trk: trk['discNumber'])
+            search_tracks.sort(key=lambda trk: trk['album'])
+            search_tracks.sort(key=lambda trk: trk['artist'])
 
         self.play(search_tracks)
 
@@ -447,6 +462,7 @@ class MainWindow(Tkinter.Tk):
             return
         track = tracks.current()
         self.change_fileinfo(track)
+        self.update_idletasks()
         self.play_track(track, tracks)
         self.play_loop(tracks)
 
@@ -497,7 +513,8 @@ class MainWindow(Tkinter.Tk):
         self.enable_controls(True)
         current_search_index = self.search_choose.current()
         current_search = self.search_choose['values'][current_search_index]
-        if current_search != "Playlists":
+        if current_search != "Playlists"\
+                and current_search != "Stations":
             self.search_button['state'] = "normal"
 
     def play_loop(self, tracks):
@@ -598,17 +615,11 @@ class MainWindow(Tkinter.Tk):
         """
         self.track_listbox.delete(0, Tkinter.END)
         for track in tracks:
-            self.track_listbox.insert(Tkinter.END, self.track_listbox_template(track))
+            self.track_listbox.insert(Tkinter.END, track_listbox_template(track))
 
         self.listbox_tracks = tracks
 
-    def track_listbox_template(self, track):
-        """
-        Format template for items in the track listbox.
-        :param track: track from TrackList
-        :return: string in the format: "title" by "artist"
-        """
-        return track['title'] + " by " + track['artist']
+
 
     def select_track(self, event):
         """
@@ -681,11 +692,14 @@ class MainWindow(Tkinter.Tk):
         """
         id_list = [item['trackId'] for item in playlist_dict_tracks]
         playlist_tracks = [track for track in self.library if track['id'] in id_list]
-        playlist_tracks.sort(key=lambda track: id_list.index(track['id']))
+        playlist_tracks.sort(key=lambda trk: id_list.index(trk['id']))
         return TrackList(playlist_tracks)
 
+    def on_track_download(self, track):
+        GMusicDownloader.download_track(track, path='', mobile_client=mobile_client, device_id=self.device_id)
 
-class CenterableToplevel(Tkinter.Toplevel):
+
+'''class CenterableToplevel(Tkinter.Toplevel):
     def __init__(self, parent):
         Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
@@ -758,13 +772,12 @@ class ChooseDevice(CenterableToplevel):
     def regain_focus(self, event):
         self.attributes("-topmost", True)
         self.grab_set()
-        self.device_chooser.focus()
+        self.device_chooser.focus()'''
 
 
 if __name__ == "__main__":
-    splash = Splash(None)
-    splash.update_idletasks()
-    mobile_client = Mobileclient()
+    splash = shared.Splash()
+    mobile_client = Mobileclient(debug_logging=False)
     authenticated = False
     force_prompt = False
     while not authenticated:
