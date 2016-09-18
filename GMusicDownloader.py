@@ -36,8 +36,11 @@ def get_image_tuple_from_url(url):
 def download_track(track, path='', mobile_client=None, device_id=None):
     """
     Downloads the mp3 file of the given track
+
     :param track: Track dict
     :param path: Path to download to. If omitted, then will download to current working directory.
+    :param mobile_client: Instance of the Mobileclient class
+    :param device_id: Mobile device ID
     :return: None
     """
     if 'id' in track:
@@ -84,7 +87,6 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
     """
     Main GUI window for the application.
     """
-    #def __init__(self, parent, mobile_client):
     def __init__(self, parent=None):
         """
         MainWindow __init__ function
@@ -94,7 +96,6 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
         Tkinter.Tk.__init__(self)
         self.parent = parent
         self.resizable(0, 0)
-        #self.mobile_client = mobile_client
         self.device_id = None
         self.library = mobile_client.get_all_songs()
 
@@ -120,31 +121,18 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
         splash.master.destroy()
         self.device_chooser = shared.ChooseDevice(self, mobile_client)
 
-    # def center(self):
-    #     """
-    #     Centers the window.
-    #     :return: None
-    #     """
-    #     self.update_idletasks()
-    #     w = self.winfo_screenwidth()
-    #     h = self.winfo_screenheight()
-    #     size = tuple(int(_) for _ in self.geometry().split('+')[0].split('x'))
-    #     x = w/2 - size[0]/2
-    #     y = h/2 - size[1]/2
-    #     self.geometry("+%d+%d" % (x, y))
-
     def fill_tree(self, tracks):
         """
-
+        Fills the tree
+        :param tracks:
+        :return: None
         """
         tracks.sort(key=lambda trk: trk['title'])
         tracks.sort(key=lambda trk: trk['trackNumber'])
         tracks.sort(key=lambda trk: trk['discNumber'])
         tracks.sort(key=lambda trk: trk['album'])
         tracks.sort(key=lambda trk: trk['albumArtist'])
-        #print(tracks[0])
         for track in tracks:
-            #print(track['title'])
             if track['albumArtist'] == '':
                 artist_label = ''
             else:
@@ -169,25 +157,6 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                 pass
             self.tree.insert(album_label + artist_label, 'end', track['title'] + track['id'], text=track['title'],
                              values=(json.dumps(track),))
-
-    # def filename_template(self, track):
-    #     """
-    #     Formats template for naming a downloaded file
-    #     :param track: dict containing track info
-    #     :return: filename string
-    #     """
-    #     return str(track['trackNumber']) + "-"  + track['title'] + "-" + track['album'] + "-" + track['artist'] + ".mp3"
-    #
-    # def get_image_tuple_from_url(self, url):
-    #     """
-    #     Gets an album or artist image from the given url.
-    #     :param url: URL of the album/artist image
-    #     :return: tuple containing mime-type and image data
-    #     """
-    #     response = urlopen(url)
-    #     mime_type = response.info().type
-    #     image_bytes = response.read()
-    #     return mime_type, image_bytes
 
     def on_download_press(self):
         """
@@ -216,7 +185,6 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                 albums = self.tree.get_children(selected_item)
                 for album in albums:
                     album_item = self.tree.item(album)
-                    #print(album_item)
                     album_name = album_item['values'][0].split(':', 1)[1]
                     progress.set_message('Retrieving: ' + album_name)
                     os.makedirs(os.path.join(base_dir, artist_name, album_name))
@@ -242,22 +210,20 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                     track_data = track_item['values'][0]
                     track = json.loads(track_data)
                     progress.set_message('Retreiving: ' + track['title'])
-                    #self.download_track(track, os.path.join(base_dir, album_name))
                     download_track(track, os.path.join(base_dir, album_name), mobile_client=mobile_client,
                                    device_id=self.device_id)
                     progress.steps_complete(1)
             else:
                 track = json.loads(data)
-                #print track['title']
                 progress.set_message('Retreiving: ' + track['title'])
-                #self.download_track(track, base_dir)
                 download_track(track, base_dir, mobile_client=mobile_client, device_id=self.device_id)
                 progress.steps_complete(1)
         progress.destroy()
 
     def count_steps(self):
         """
-
+        Counts the number of steps involved in downloading the selected items.
+        :return: The number of steps to tell the progress bar to use.
         """
         count = 0
         selection = self.tree.selection()
@@ -269,67 +235,19 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                     count += 1
         return count
 
-    # def download_track(self, track, path=''):
-    #     """
-    #     Downloads the mp3 file of the given track
-    #     :param track: Track dict
-    #     :param path: Path to download to. If omitted, then will download to current working directory.
-    #     :return: None
-    #     """
-    #     if 'id' in track:
-    #         track_id = track['id']
-    #     elif 'storeId' in track:
-    #         track_id = track['storeId']
-    #     else:
-    #         print 'Problem with track info...'
-    #         print track
-    #         return
-    #     try:
-    #         stream_url = self.mobile_client.get_stream_url(track_id, self.device_id)
-    #         song_bytes = urlopen(stream_url).read()
-    #         #print stream_url
-    #     except Exception, e:
-    #         print "Error retrieving track: " + track['title']
-    #         print "Error: ", e
-    #         return
-    #
-    #     output_file = open(os.path.join(path, filename_template(track)), "wb")
-    #     output_file.write(song_bytes)
-    #     output_file.close()
-    #     id3 = Mp3AudioFile(output_file.name)
-    #     id3.initTag()
-    #     id3.tag.title = track['title']
-    #     id3.tag.artist = track['artist']
-    #     id3.tag.album = track['album']
-    #     id3.tag.genre = track['genre']
-    #     #print(track['year'])
-    #     year_int = int(track['year'])
-    #     if year_int != 0:
-    #         id3.tag.release_date = year_int
-    #         id3.tag.original_release_date = year_int
-    #         id3.tag.recording_date = year_int
-    #     id3.tag.track_num = track['trackNumber']
-    #     if track.has_key('albumArtRef'):
-    #         mime_type, image_data = self.get_image_tuple_from_url(track['albumArtRef'][0]['url'])
-    #         #mime_type = image_tuple[0]
-    #         #image_data = image_tuple[1]
-    #         id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
-    #     elif track.has_key('artistArtRef'):
-    #         mime_type, image_data = self.get_image_tuple_from_url(track['artistArtRef'][0]['url'])
-    #         #mime_type = image_tuple[0]
-    #         #image_data = image_tuple[1]
-    #         id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
-    #     id3.tag.save()
-    #     #print(track)
-    #     #print(id3.tag.getBestDate())
 
-
-class ProgressWindow(Tkinter.Toplevel):
+class ProgressWindow(shared.Centerable, Tkinter.Toplevel):
     """
     Progress window for downloading.
     """
     def __init__(self, parent, minimum, maximum):
-        Tkinter.Toplevel.__init__(self, parent) 
+        """
+        Init function for ProgressWindow class.
+        :param parent: Parent widget
+        :param minimum: Starting value
+        :param maximum: Maximum value
+        """
+        Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
         self.overrideredirect(1)
         self.message = Tkinter.Label(self)
@@ -340,75 +258,20 @@ class ProgressWindow(Tkinter.Toplevel):
         self.bar['maximum'] = maximum
         self.bar.pack(padx=10, pady=10)
 
-        #self.grab_set()
-
-    def center(self):
-        self.update_idletasks()
-        parent_x, parent_y = (int(_) for _ in self.parent.geometry().split('+', 1)[1].split('+'))
-        parent_w, parent_h = (int(_) for _ in self.parent.geometry().split('+', 1)[0].split('x'))
-        w, h = (int(_) for _ in self.geometry().split('+')[0].split('x'))
-        x = parent_x + parent_w/2 - w/2
-        y = parent_y + parent_h/2 - h/2
-        self.geometry("+%d+%d" % (x, y))
-
     def steps_complete(self, number_of_steps):
+        """
+        Adds the specified number of steps to the progress window.
+        :param number_of_steps: Number of steps to add
+        :return: None
+        """
         self.bar['value'] += number_of_steps
         self.parent.update_idletasks()
         self.update_idletasks()
-        #print(self.bar['value'])
 
     def set_message(self, message_text):
         self.message.config(text=message_text)
         self.update_idletasks()
 
-
-# class ChooseDevice(Tkinter.Toplevel):
-#     """
-#
-#     """
-#     def __init__(self, parent, mobile_client):
-#         Tkinter.Toplevel.__init__(self, parent)
-#         self.parent = parent
-#         self.wm_title('Choose Device')
-#         self.attributes("-topmost", True)
-#         self.protocol('WM_DELETE_WINDOW', lambda x=1: x)
-#
-#         self.text_label = Tkinter.Label(self, text='Choose a mobile device ID.')
-#         self.text_label.pack()
-#
-#         dev_list = []
-#         for dev in mobile_client.get_registered_devices():
-#             if dev['type'] == 'ANDROID' or dev['type'] == 'IOS':
-#                 dev_list.append(dev['friendlyName'] + ':' + dev['id'])
-#
-#         self.device_chooser_var = None
-#         self.device_chooser = ttk.Combobox(self, textvariable=self.device_chooser_var, values=dev_list)
-#         self.device_chooser.bind('<<ComboboxSelected>>', self.device_chosen)
-#
-#         self.bind("<FocusOut>", self.regain_focus)
-#
-#         self.device_chooser.pack()
-#         self.center()
-#         self.regain_focus()
-#
-#     def device_chosen(self, e):
-#         device_choice = self.device_chooser.get()
-#         #print(device_choice)
-#         self.parent.device_id = device_choice.split(':0x')[1]
-#         self.destroy()
-#
-#     def center(self):
-#         self.update_idletasks()
-#         parent_x, parent_y = (int(_) for _ in self.parent.geometry().split('+', 1)[1].split('+'))
-#         parent_w, parent_h = (int(_) for _ in self.parent.geometry().split('+', 1)[0].split('x'))
-#         w, h = (int(_) for _ in self.geometry().split('+')[0].split('x'))
-#         x = parent_x + parent_w/2 - w/2
-#         y = parent_y + parent_h/2 - h/2
-#         self.geometry('+%d+%d' % (x, y))
-#
-#     def regain_focus(self, e=None):
-#         self.grab_set()
-#         self.focus()
 
 if __name__ == "__main__":
     splash = shared.Splash('GMusicDownloader\nis loading...')

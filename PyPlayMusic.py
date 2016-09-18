@@ -406,6 +406,9 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
         self.play(search_tracks)
 
     def remove_all_focus(self):
+        """
+        Removes focus from interactable widgets.
+        """
         self.fileinfo.focus()
 
     def track_matches(self, track):
@@ -618,8 +621,6 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             self.track_listbox.insert(Tkinter.END, track_listbox_template(track))
 
         self.listbox_tracks = tracks
-
-
 
     def select_track(self, event):
         """
