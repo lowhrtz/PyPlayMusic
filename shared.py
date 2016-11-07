@@ -4,7 +4,14 @@ import ttk
 
 
 class Centerable(object):
+    """
+    Class that adds a center member to windows in this application.
+    """
     def center(self):
+        """
+        Centers the window
+        :return: None
+        """
         self.update_idletasks()
 
         if self.parent is None:
@@ -20,6 +27,9 @@ class Centerable(object):
 
 
 class Splash(Centerable, Tkinter.Toplevel):
+    """
+    Class for the splash window.
+    """
     def __init__(self, message_text='PyPlayMusic is loading...', parent=None):
         Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
@@ -40,9 +50,14 @@ class Splash(Centerable, Tkinter.Toplevel):
 
 class ChooseDevice(Centerable, Tkinter.Toplevel):
     """
-
+    Class that defines the device chooser window.
     """
     def __init__(self, parent, mobile_client):
+        """
+        Init function for the ChooseDevice class
+        :param parent: Used for centering purposes
+        :param mobile_client: GMusicAPI Mobileclient instance
+        """
         Tkinter.Toplevel.__init__(self, parent)
         self.parent = parent
         self.wm_title('Choose Device')
@@ -67,12 +82,20 @@ class ChooseDevice(Centerable, Tkinter.Toplevel):
         self.regain_focus()
 
     def device_chosen(self):
+        """
+        Callback function evoked once the device has been chosen.
+        :return: None
+        """
         device_choice_index = self.device_chooser.current()
         device_choice = self.device_chooser['values'][device_choice_index]
         self.parent.device_id = device_choice.split(':0x')[1]
         self.destroy()
 
     def regain_focus(self):
+        """
+        Callback function evoked when ChooseDevice loses focus.
+        :return: None
+        """
         self.attributes("-topmost", True)
         self.grab_set()
         self.device_chooser.focus()

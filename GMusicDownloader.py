@@ -18,10 +18,7 @@ def filename_template(track):
     :param track: dict containing track info
     :return: filename string
     """
-    track_title = track['title'].replace('/', '_').replace('=', '_')
-    track_album = track['album'].replace('/', '_').replace('=', '_')
-    track_artist = track['artist'].replace('/', '_').replace('=', '_')
-    return str(track['trackNumber']) + "-" + track_title + "-" + track_album + "-" + track_artist + ".mp3"
+    return str(track['trackNumber']) + "-" + track['title'] + "-" + track['album'] + "-" + track['artist'] + ".mp3"
 
 
 def get_image_tuple_from_url(url):
@@ -68,10 +65,7 @@ def download_track(track, path='', mobile_client=None, device_id=None):
     id3.tag.artist = track['artist']
     id3.tag.album = track['album']
     id3.tag.genre = track['genre']
-    if 'year' in track:
-        year_int = int(track['year'])
-    else:
-        year_int = 0
+    year_int = int(track['year'])
     if year_int != 0:
         id3.tag.release_date = year_int
         id3.tag.original_release_date = year_int
@@ -223,12 +217,9 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                 for album in albums:
                     album_item = self.tree.item(album)
                     #print(album_item)
-                    album_name = album_item['values'][0].split(':', 1)[1].replace('/', '_')
+                    album_name = album_item['values'][0].split(':', 1)[1]
                     progress.set_message('Retrieving: ' + album_name)
-                    try:
-                        os.makedirs(os.path.join(base_dir, artist_name, album_name))
-                    except OSError:
-                        print "Directory already exists. Skipping directory creation.\n" + album_name
+                    os.makedirs(os.path.join(base_dir, artist_name, album_name))
                     progress.steps_complete(1)
                     tracks = self.tree.get_children(album)
                     for track_child in tracks:
@@ -243,10 +234,7 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                 progress.steps_complete(1)
                 album_name = data.split(':', 1)[1]
                 progress.set_message('Retreiving: ' + album_name)
-                try:
-                    os.makedirs(os.path.join(base_dir, album_name))
-                except OSError:
-                    print "Directory already exists. Skipping directory creation.\n" + album_name
+                os.makedirs(os.path.join(base_dir, album_name))
                 progress.steps_complete(1)
                 tracks = self.tree.get_children(selected_item)
                 for track_child in tracks:
