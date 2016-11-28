@@ -569,13 +569,17 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
         else:
             next_image = self.default_image
-        self.album_image.configure(image=next_image)
         if 'year' in metadata:
             year = str(metadata['year'])
         else:
             year = 'Unknown'
+        if 'genre' in metadata:
+            genre = metadata['genre']
+        else:
+            genre = 'Unknown'
+        self.album_image.configure(image=next_image)
         self.fileinfo['text'] = "Title: " + metadata['title'] + "\nArtist: " + metadata['artist']\
-                                + "\nAlbum: " + metadata['album'] + "\nGenre: " + metadata['genre'] + "\nYear: " + year
+                                + "\nAlbum: " + metadata['album'] + "\nGenre: " + genre + "\nYear: " + year
         self.progress['value'] = 0
         self.current_time['text'] = "0:00"
         self.total_time['text'] = "0:00"
