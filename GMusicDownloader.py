@@ -4,6 +4,7 @@ import tkFileDialog
 import Tkinter
 import ttk
 from urllib2 import urlopen
+from datetime import datetime as dt
 
 from eyed3.id3.frames import ImageFrame
 from eyed3.mp3 import Mp3AudioFile
@@ -18,10 +19,15 @@ def filename_template(track):
     :param track: dict containing track info
     :return: filename string
     """
+    if 'trackNumber' in track:
+        date_or_tracknumber = str(track['trackNumber'])
+    else:
+        date_or_tracknumber = dt.fromtimestamp(int(track['publicationTimestampMillis'])/1000).strftime('%Y_%m_%d')
     track_title = track['title'].replace('/', '_').replace('=', '_')
     track_album = track['album'].replace('/', '_').replace('=', '_')
     track_artist = track['artist'].replace('/', '_').replace('=', '_')
-    return str(track['trackNumber']) + "-" + track_title + "-" + track_album + "-" + track_artist + ".mp3"
+    #return str(track['trackNumber']) + "-" + track_title + "-" + track_album + "-" + track_artist + ".mp3"
+    return date_or_tracknumber + "-" + track_title + "-" + track_album + "-" + track_artist + ".mp3"
 
 
 def get_image_tuple_from_url(url):
@@ -47,12 +53,18 @@ def download_track(track, path='', mobile_client=None, device_id=None):
         track_id = track['id']
     elif 'storeId' in track:
         track_id = track['storeId']
+    elif 'episodeId' in track:
+        track_id = track['episodeId']
     else:
         print 'Problem with track info...'
         print track
         return
     try:
-        stream_url = mobile_client.get_stream_url(track_id, device_id)
+        #stream_url = mobile_client.get_stream_url(track_id, device_id)
+        if 'episodeId' in track:
+            stream_url = mobile_client.get_podcast_episode_stream_url(track_id, device_id)
+        else:
+            stream_url = mobile_client.get_stream_url(track_id, device_id)
         song_bytes = urlopen(stream_url).read()
     except Exception, e:
         print "Error retrieving track: " + track['title']
@@ -67,7 +79,11 @@ def download_track(track, path='', mobile_client=None, device_id=None):
     id3.tag.title = track['title']
     id3.tag.artist = track['artist']
     id3.tag.album = track['album']
-    id3.tag.genre = track['genre']
+    if 'genre' in track:
+        genre = track['genre']
+    else:
+        genre = u'Podcast'
+    id3.tag.genre = genre
     if 'year' in track:
         year_int = int(track['year'])
     else:
@@ -76,12 +92,19 @@ def download_track(track, path='', mobile_client=None, device_id=None):
         id3.tag.release_date = year_int
         id3.tag.original_release_date = year_int
         id3.tag.recording_date = year_int
-    id3.tag.track_num = track['trackNumber']
+    if 'trackNumber' in track:
+        track_number = track['trackNumber']
+    else:
+        track_number = 0
+    id3.tag.track_num = track_number
     if 'albumArtRef' in track:
         mime_type, image_data = get_image_tuple_from_url(track['albumArtRef'][0]['url'])
         id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
     elif 'artistArtRef' in track:
         mime_type, image_data = get_image_tuple_from_url(track['artistArtRef'][0]['url'])
+        id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
+    elif 'art' in track:
+        mime_type, image_data = get_image_tuple_from_url(track['art'][0]['url'])
         id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
     id3.tag.save()
 

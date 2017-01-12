@@ -168,7 +168,7 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
         search_frame = Tkinter.Frame(self)
         self.search_choose = ttk.Combobox(search_frame, state='readonly')
         self.search_choose['values'] = (
-            "Search by Artist", "Search by Genre", "Search by Album", "Search by Title", "Playlists", "Stations"
+            "Search by Artist", "Search by Genre", "Search by Album", "Search by Title", "Playlists", "Stations", "Podcasts"
         )
         self.search_choose.current(0)
         self.search_choose.bind("<<ComboboxSelected>>", self.on_search_choose_click)
@@ -309,6 +309,12 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             self.search_button['state'] = "disabled"
             self.randomize_list['state'] = "disabled"
             self.station_option_chosen()
+        elif current_search == "Podcasts":
+            self.second_combobox['state'] = "readonly"
+            self.entry['state'] = "disabled"
+            self.search_button['state'] = "disabled"
+            self.randomize_list['state'] = "disabled"
+            self.podcast_option_chosen()
         else:
             self.second_combobox['state'] = "disabled"
             self.entry['state'] = "normal"
@@ -351,6 +357,29 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
         station_id = station_dict['id']
         station_tracks = mobile_client.get_station_tracks(station_id, num_tracks=200)
         self.play(TrackList(station_tracks))
+
+    def podcast_option_chosen(self):
+        self.podcasts = mobile_client.get_all_podcast_series(self.device_id)
+        podcast_list = []
+        for podcast in self.podcasts:
+            podcast_list.append(podcast['title'])
+        self.second_combobox['values'] = podcast_list
+        self.second_combobox.current(0)
+        self.second_combobox.bind("<<ComboboxSelected>>", self.on_podcasts_choose_click)
+
+    def on_podcasts_choose_click(self, event):
+        self.player.stop()
+        choice_index = self.second_combobox.current()
+        podcast_dict = self.podcasts[choice_index]
+        podcast_id = podcast_dict['seriesId']
+        all_podcast_episodes = mobile_client.get_all_podcast_episodes(self.device_id)
+        podcast_episodes = []
+        for episode in all_podcast_episodes:
+            if episode['seriesId'] == podcast_id:
+                episode['artist'] = podcast_dict['author']
+                episode['album'] = episode['seriesTitle']
+                podcast_episodes.append(episode)
+        self.play(TrackList(podcast_episodes))
 
     def get_playlists(self):
         """
@@ -487,13 +516,18 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             track_id = track['id']
         elif 'storeId' in track:
             track_id = track['storeId']
+        elif 'episodeId' in track:
+            track_id = track['episodeId']
         else:
             print 'Problem with track info...'
             print track
             self.play_track(tracks.next(), tracks)
             return
         try:
-            stream_audio_url = mobile_client.get_stream_url(track_id, self.device_id)
+            if 'episodeId' in track:
+                stream_audio_url = mobile_client.get_podcast_episode_stream_url(track_id, self.device_id)
+            else:
+                stream_audio_url = mobile_client.get_stream_url(track_id, self.device_id)
             self.player.load_url(stream_audio_url)
             self.player.play()
             if position:
@@ -567,6 +601,8 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             next_image = self.get_photo_image_from_url(metadata['albumArtRef'][0]['url'])
         elif 'artistArtRef' in metadata:
             next_image = self.get_photo_image_from_url(metadata['artistArtRef'][0]['url'])
+        elif 'art' in metadata:
+            next_image = self.get_photo_image_from_url(metadata['art'][0]['url'])
         else:
             next_image = self.default_image
         if 'year' in metadata:
