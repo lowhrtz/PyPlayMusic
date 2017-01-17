@@ -63,7 +63,7 @@ class Player(object):
         success = False
         i = 0
         while not success:
-            success, pos = self.element.query_position(Gst.Format.TIME)
+            success, pos = self.playbin.query_position(Gst.Format.TIME)
             i += 1
             if i > 1000:
                 return 0
