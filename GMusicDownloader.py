@@ -97,6 +97,11 @@ def download_track(track, path='', mobile_client=None, device_id=None):
     else:
         track_number = 0
     id3.tag.track_num = track_number
+    if 'discNumber' in track:
+        disc_number = track['discNumber']
+    else:
+        disc_number = 1
+    id3.tag.disc_num = disc_number
     if 'albumArtRef' in track:
         mime_type, image_data = get_image_tuple_from_url(track['albumArtRef'][0]['url'])
         id3.tag.images.set(ImageFrame.FRONT_COVER, image_data, mime_type)
