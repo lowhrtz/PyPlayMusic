@@ -79,6 +79,7 @@ def download_track(track, path='', mobile_client=None, device_id=None):
     id3.tag.title = track['title']
     id3.tag.artist = track['artist']
     id3.tag.album = track['album']
+    id3.tag.album_artist = track['albumArtist']
     if 'genre' in track:
         genre = track['genre']
     else:
