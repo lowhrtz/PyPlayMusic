@@ -246,13 +246,13 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
             data = values[0]
             if data.startswith('artist:'):
                 progress.steps_complete(1)
-                artist_name = data.split(':', 1)[1]
+                artist_name = data.split(':', 1)[1].replace('/', '_').replace('=', '_')
                 progress.set_message('Retreiving: ' + artist_name)
                 albums = self.tree.get_children(selected_item)
                 for album in albums:
                     album_item = self.tree.item(album)
                     #print(album_item)
-                    album_name = album_item['values'][0].split(':', 1)[1].replace('/', '_')
+                    album_name = album_item['values'][0].split(':', 1)[1].replace('/', '_').replace('=', '_')
                     progress.set_message('Retrieving: ' + album_name)
                     try:
                         os.makedirs(os.path.join(base_dir, artist_name, album_name))
@@ -270,7 +270,7 @@ class MainWindow(shared.Centerable, Tkinter.Tk):
                         progress.steps_complete(1)
             elif data.startswith('album:'):
                 progress.steps_complete(1)
-                album_name = data.split(':', 1)[1]
+                album_name = data.split(':', 1)[1].replace('/', '_').replace('=', '_')
                 progress.set_message('Retreiving: ' + album_name)
                 try:
                     os.makedirs(os.path.join(base_dir, album_name))
