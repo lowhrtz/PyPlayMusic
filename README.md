@@ -3,9 +3,13 @@ Python/Tk-based player for music in a Google Play Music account.
 
 Dependencies
 ------------------------------------------------------------
-Tkinter, gmusicapi, pycrypto, urllib2, pillow<br />
-GMusicDownloader.py requires eyed3<br />
+Tkinter, gmusicapi, pycrypto, urllib2, pillow, eyed3<br />
 Python 2.7.9+ is also required.
+
+
+Ubuntu:<br />
+`sudo apt install python-pil.imagetk python-pip python-gi`<br />
+`sudo pip install gmusicapi eyed3 pycrypto`
 
 Note About Player Backends
 --------------------------
